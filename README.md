@@ -6,4 +6,13 @@ Section: UCOS 3-1
 Group 2
 
 Members:
-Padilla
+- Bacarro
+- Gogola
+- Jovellanos
+- Lazo
+- Maula
+- Padilla
+- Quimpan
+- Rosal
+- Sangueza
+- Toleran
