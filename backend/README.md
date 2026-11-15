@@ -30,5 +30,8 @@
 - click + icon and copy the following above
 - Leave this terminal running. It should result to `PHP Development Server (http://localhost:3000) started`
 
-# 3. Opening the applciation
+# 3. Opening the application
 - Copy and paste the link in the browser `http://localhost:3000/`
+
+# 4. Closing the application
+- close both terminal by pressing `Ctrl + C`
