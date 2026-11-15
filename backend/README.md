@@ -8,7 +8,7 @@
 
 # 1. Setting up Database
 1. Open **XAMPP control panel** then start both Apache and MySQL
-2. Click Admin button next to MySQL module that will redirect you to phpmyadmin [http://localhost/phpmyadmin]
+2. Click Admin button next to MySQL module that will redirect you to phpmyadmin `http://localhost/phpmyadmin`
 3. Click SQL tab on top of the page
 4. Copy the schema from `database/schema.sql`, paste it into the SQL query box then click Go
 
