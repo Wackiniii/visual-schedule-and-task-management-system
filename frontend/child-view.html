@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KiddoPath — Child View &amp; Talking Board</title>
+  <link href="css/style.css" rel="stylesheet" />
+  <style>
+    .mode-switch-pill {
+      display: inline-flex;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1.5px solid var(--glass-border);
+      border-radius: 18px;
+      padding: 0.35rem;
+      gap: 0.35rem;
+    }
+    .mode-tab-btn {
+      min-height: 44px;
+      padding: 0.55rem 1.25rem;
+      border-radius: 14px;
+      border: none;
+      background: transparent;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 0.96rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .mode-tab-btn.active {
+      background: linear-gradient(135deg, #6ba8f8 0%, #947ef2 100%);
+      color: #ffffff;
+      box-shadow: 0 6px 16px rgba(91, 155, 243, 0.28);
+    }
+    .cat-pill-btn {
+      min-height: 42px;
+      padding: 0.45rem 1.05rem;
+      border-radius: 999px;
+      border: 1.5px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.78);
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+    .cat-pill-btn.active {
+      background: var(--pastel-lavender-soft);
+      border-color: var(--pastel-lavender);
+      color: #5b21b6;
+    }
+    .glass-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(30, 41, 59, 0.35);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+      z-index: 1500;
+    }
+    .glass-backdrop.open { display: flex; }
+    .glass-dialog {
+      width: 100%;
+      max-width: 460px;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1.5px solid #ffffff;
+      border-radius: 26px;
+      padding: 1.75rem;
+      box-shadow: 0 24px 60px rgba(30, 41, 59, 0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <header id="appNavbar"></header>
+
+  <main class="container py-4">
+
+    <!-- Top Child & Mode Control Bar -->
+    <section class="glass-card p-3 p-md-4 mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div class="d-flex flex-wrap align-items-center gap-3">
+        <div>
+          <label for="childSelector" class="glass-label mb-1">Active Child</label>
+          <select id="childSelector" class="glass-select" style="min-width: 200px;"></select>
+        </div>
+        <div>
+          <label for="scheduleDateInput" class="glass-label mb-1">Schedule Date</label>
+          <input type="date" id="scheduleDateInput" class="glass-input" />
+        </div>
+      </div>
+
+      <div class="mode-switch-pill" role="tablist">
+        <button type="button" id="tabRoutineBtn" class="mode-tab-btn active">My Routine</button>
+        <button type="button" id="tabTalkingBtn" class="mode-tab-btn">My Talking Board</button>
+      </div>
+    </section>
+
+    <!-- VIEW 1: Visual Schedule & Pie Countdown Timer -->
+    <section id="routineSection">
+      <div class="row">
+        <!-- Current Task Spotlight + Visual Pie Timer -->
+        <div class="col-lg-5">
+          <div class="child-task-hero text-center h-100 d-flex flex-column justify-content-between">
+            <div>
+              <span class="badge-pastel badge-sky mb-2" id="currentTaskBadge">Now</span>
+              <div id="heroIconTile" class="pastel-icon-tile tile-lavender mb-3" style="width:76px;height:76px;border-radius:24px;font-size:2.3rem;margin:0 auto;">
+                &#11088;
+              </div>
+              <h1 class="h3 mb-1" id="heroTaskTitle" style="font-size: 1.65rem;">No Tasks Scheduled</h1>
+              <p class="text-secondary small mb-4" id="heroTaskMeta">Select a child or create a schedule in Schedule Builder.</p>
+            </div>
+
+            <!-- Visual Pie Countdown Ring -->
+            <div class="my-2">
+              <div id="pieTimerRing" class="pie-timer-ring" style="--timer-deg: 360deg;">
+                <div class="pie-timer-inner">
+                  <div class="h3 mb-0" id="timerDisplay" style="font-size: 1.5rem;">00:00</div>
+                  <div class="small text-muted fw-bold" id="timerStatusLabel">Ready</div>
+                </div>
+              </div>
+
+              <div class="d-flex justify-content-center gap-2 mt-3">
+                <button type="button" id="startPauseTimerBtn" class="btn-pastel btn-pastel-sky" style="min-height:44px;padding:0.5rem 1.1rem;">Start Timer</button>
+                <button type="button" id="resetTimerBtn" class="btn-pastel btn-pastel-glass" style="min-height:44px;padding:0.5rem 1rem;">Reset</button>
+                <button type="button" id="speakTaskBtn" class="btn-pastel btn-pastel-lavender" style="min-height:44px;padding:0.5rem 1rem;">Speak</button>
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <button type="button" id="completeCurrentTaskBtn" class="btn-pastel btn-pastel-mint w-100" style="font-size: 1.1rem; min-height: 54px;" disabled>
+                I'm All Done!
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step-by-Step Visual Routine List -->
+        <div class="col-lg-7">
+          <div class="glass-card p-4 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div>
+                <h2 class="h3 mb-0" style="font-size: 1.35rem;">Today's Visual Steps</h2>
+                <p class="small text-secondary mb-0">Tap any step to focus on it or mark it complete</p>
+              </div>
+              <span class="badge-pastel badge-mint" id="routineProgressBadge">0 / 0 Done</span>
+            </div>
+
+            <div id="childTaskList" class="d-flex flex-column gap-3">
+              <div class="glass-panel-subtle p-4 text-center text-secondary">Loading visual schedule...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: My Talking Board (AAC Picture Cards) -->
+    <section id="talkingBoardSection" class="d-none">
+      <div class="glass-card p-4">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+          <div>
+            <span class="badge-pastel badge-lavender mb-1">AAC Communication Board</span>
+            <h2 class="h3 mb-0" style="font-size: 1.45rem;">My Talking Board</h2>
+            <p class="small text-secondary mb-0">Tap any card to speak aloud clearly</p>
+          </div>
+          <button type="button" id="openAddAacBtn" class="btn-pastel btn-pastel-lavender">
+            <span>+ Add Custom Card</span>
+          </button>
+        </div>
+
+        <!-- Category Filter Pills -->
+        <div id="aacCategoryBar" class="d-flex flex-wrap gap-2 mb-4">
+          <button type="button" class="cat-pill-btn active" data-cat="All">All Cards</button>
+          <button type="button" class="cat-pill-btn" data-cat="Needs">Needs</button>
+          <button type="button" class="cat-pill-btn" data-cat="Feelings">Feelings</button>
+          <button type="button" class="cat-pill-btn" data-cat="Activities">Activities</button>
+          <button type="button" class="cat-pill-btn" data-cat="People">People</button>
+        </div>
+
+        <!-- AAC Grid -->
+        <div id="aacCardsGrid" class="row"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Add Custom AAC Card Modal -->
+  <div id="aacModalBackdrop" class="glass-backdrop" role="dialog" aria-modal="true">
+    <div class="glass-dialog">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h3 class="h3 mb-0" style="font-size: 1.3rem;">Add Talking Board Card</h3>
+        <button type="button" id="closeAacModalBtn" class="btn-pastel btn-pastel-glass" style="min-height:40px;padding:0.35rem 0.85rem;">&times;</button>
+      </div>
+
+      <form id="aacCardForm">
+        <div class="mb-3">
+          <label for="aacLabelInput" class="glass-label">Word or Short Phrase *</label>
+          <input type="text" id="aacLabelInput" class="glass-input" placeholder="e.g., I need a break" required />
+        </div>
+
+        <div class="row" style="margin:-0.4rem;">
+          <div class="col-sm-6" style="padding:0.4rem;">
+            <label for="aacEmojiInput" class="glass-label">Picture Emoji *</label>
+            <input type="text" id="aacEmojiInput" class="glass-input" placeholder="e.g., &#128164;" value="&#128172;" required />
+          </div>
+          <div class="col-sm-6" style="padding:0.4rem;">
+            <label for="aacCategoryInput" class="glass-label">Category</label>
+            <select id="aacCategoryInput" class="glass-select">
+              <option value="Needs">Needs</option>
+              <option value="Feelings">Feelings</option>
+              <option value="Activities">Activities</option>
+              <option value="People">People</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+          <button type="button" id="cancelAacModalBtn" class="btn-pastel btn-pastel-glass">Cancel</button>
+          <button type="submit" class="btn-pastel btn-pastel-lavender">Add Card</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script src="js/api.js"></script>
+  <script src="js/script.js"></script>
+  <script>
+    const currentUser = requireAuth();
+    renderGlassNavbar('child');
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const preselectedChildId = urlParams.get('child_id');
+
+    const childSelector = document.getElementById('childSelector');
+    const scheduleDateInput = document.getElementById('scheduleDateInput');
+    scheduleDateInput.value = getTodayISO();
+
+    const ICON_EMOJI_MAP = {
+      'fa-sun': '☀️',
+      'fa-tooth': '🪥',
+      'fa-utensils': '🍽️',
+      'fa-shirt': '👕',
+      'fa-book-open': '📖',
+      'fa-puzzle-piece': '🧩',
+      'fa-bath': '🛁',
+      'fa-bed': '🛏️',
+      'fa-music': '🎵',
+      'fa-person-walking': '🚶',
+      'fa-apple-whole': '🍎',
+      'fa-hands-bubbles': '🧼',
+      'fa-tasks': '⭐',
+    };
+
+    function getTaskEmoji(iconKey) {
+      return ICON_EMOJI_MAP[iconKey] || iconKey || '⭐';
+    }
+
+    let currentTasks = [];
+    let selectedTaskIndex = 0;
+    let timerInterval = null;
+    let totalSeconds = 0;
+    let remainingSeconds = 0;
+    let isTimerRunning = false;
+
+    const tabRoutineBtn = document.getElementById('tabRoutineBtn');
+    const tabTalkingBtn = document.getElementById('tabTalkingBtn');
+    const routineSection = document.getElementById('routineSection');
+    const talkingBoardSection = document.getElementById('talkingBoardSection');
+
+    tabRoutineBtn.addEventListener('click', () => {
+      tabRoutineBtn.classList.add('active');
+      tabTalkingBtn.classList.remove('active');
+      routineSection.classList.remove('d-none');
+      talkingBoardSection.classList.add('d-none');
+    });
+
+    tabTalkingBtn.addEventListener('click', () => {
+      tabTalkingBtn.classList.add('active');
+      tabRoutineBtn.classList.remove('active');
+      talkingBoardSection.classList.remove('d-none');
+      routineSection.classList.add('d-none');
+    });
+
+    function stopTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = null;
+      isTimerRunning = false;
+      document.getElementById('startPauseTimerBtn').textContent = 'Start Timer';
+    }
+
+    function updatePieDisplay() {
+      const mins = Math.floor(remainingSeconds / 60);
+      const secs = remainingSeconds % 60;
+      document.getElementById('timerDisplay').textContent =
+        `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+      const deg = totalSeconds > 0 ? Math.round((remainingSeconds / totalSeconds) * 360) : 360;
+      document.getElementById('pieTimerRing').style.setProperty('--timer-deg', `${deg}deg`);
+    }
+
+    function selectTask(index) {
+      stopTimer();
+      selectedTaskIndex = index;
+      const task = currentTasks[index];
+
+      if (!task) {
+        document.getElementById('currentTaskBadge').textContent = 'Empty';
+        document.getElementById('heroIconTile').textContent = '⭐';
+        document.getElementById('heroTaskTitle').textContent = 'No Tasks Scheduled';
+        document.getElementById('heroTaskMeta').textContent = 'Add tasks in Schedule Builder to see them here.';
+        document.getElementById('completeCurrentTaskBtn').disabled = true;
+        totalSeconds = 0;
+        remainingSeconds = 0;
+        document.getElementById('timerStatusLabel').textContent = 'Ready';
+        updatePieDisplay();
+        return;
+      }
+
+      const isDone = task.status === 'completed';
+      document.getElementById('currentTaskBadge').textContent = isDone ? 'Completed' : `Step ${index + 1} of ${currentTasks.length}`;
+      document.getElementById('heroIconTile').textContent = getTaskEmoji(task.icon);
+      document.getElementById('heroTaskTitle').textContent = task.name;
+      document.getElementById('heroTaskMeta').textContent = `${formatTime12h(task.time)} • ${task.duration || 10} minutes`;
+
+      const completeBtn = document.getElementById('completeCurrentTaskBtn');
+      completeBtn.disabled = isDone;
+      completeBtn.textContent = isDone ? 'Completed!' : "I'm All Done!";
+
+      totalSeconds = (parseInt(task.duration, 10) || 10) * 60;
+      remainingSeconds = isDone ? 0 : totalSeconds;
+      document.getElementById('timerStatusLabel').textContent = isDone ? 'Done' : 'Ready';
+      updatePieDisplay();
+      renderTaskList();
+    }
+
+    document.getElementById('startPauseTimerBtn').addEventListener('click', () => {
+      if (!currentTasks[selectedTaskIndex] || remainingSeconds <= 0) return;
+      if (isTimerRunning) {
+        stopTimer();
+        document.getElementById('timerStatusLabel').textContent = 'Paused';
+        return;
+      }
+
+      isTimerRunning = true;
+      document.getElementById('startPauseTimerBtn').textContent = 'Pause';
+      document.getElementById('timerStatusLabel').textContent = 'Active';
+      speakText(`Starting ${currentTasks[selectedTaskIndex].name}`);
+
+      timerInterval = setInterval(() => {
+        remainingSeconds -= 1;
+        updatePieDisplay();
+        if (remainingSeconds <= 0) {
+          stopTimer();
+          document.getElementById('timerStatusLabel').textContent = 'Time Up!';
+          playSuccessChime();
+          speakText(`Time is up for ${currentTasks[selectedTaskIndex].name}. Great job!`);
+        }
+      }, 1000);
+    });
+
+    document.getElementById('resetTimerBtn').addEventListener('click', () => {
+      const task = currentTasks[selectedTaskIndex];
+      if (!task) return;
+      stopTimer();
+      totalSeconds = (parseInt(task.duration, 10) || 10) * 60;
+      remainingSeconds = totalSeconds;
+      document.getElementById('timerStatusLabel').textContent = 'Ready';
+      updatePieDisplay();
+    });
+
+    document.getElementById('speakTaskBtn').addEventListener('click', () => {
+      const task = currentTasks[selectedTaskIndex];
+      if (task) speakText(task.name);
+    });
