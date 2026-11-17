@@ -4,11 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>KiddoPath — Schedule Builder</title>
-  <!-- ADDED: fonts + Font Awesome (used by the navbar in script.js and the page icons) -->
+  <!-- ADDED: fonts + Font Awesome -->
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link href="css/style.css" rel="stylesheet" />
-  <!-- ADDED: extra utilities/components, loaded after style.css -->
   <link href="css/pages-extra.css" rel="stylesheet" />
 </head>
 <body>
@@ -18,20 +17,22 @@
     <div class="page-header">
       <div>
         <h1 class="h3 mb-1">Schedule Builder</h1>
-        <p class="text-secondary small mb-0">Pick a child and date, then drag (or tap) activities into the schedule.</p>
+        <p class="text-secondary small mb-0">Everything here is saved to the database: pick a child and date, then add, edit or delete tasks.</p>
       </div>
     </div>
 
-    <!-- ADDED: child + date pickers -->
+    <!-- child + date pickers; chips list the schedules already saved for the child -->
     <div class="glass-card p-4 mb-4">
       <div class="row">
         <div class="col-md-6"><label class="glass-label" for="childSelect">Child</label><select id="childSelect" class="glass-select"></select></div>
         <div class="col-md-6"><label class="glass-label" for="dateInput">Date</label><input type="date" id="dateInput" class="glass-input" /></div>
       </div>
+      <div class="small text-secondary mt-2">Saved schedules for this child:</div>
+      <div id="dateChips" class="d-flex flex-wrap gap-2 mt-1"></div>
     </div>
 
     <div class="row">
-      <!-- ADDED: activity bank (draggable presets + custom task) -->
+      <!-- activity bank -->
       <div class="col-lg-4">
         <div class="glass-card p-4 h-100">
           <h2 class="h6 mb-3">Activity Bank</h2>
@@ -44,18 +45,28 @@
         </div>
       </div>
 
-      <!-- ADDED: drop zone / draft schedule -->
       <div class="col-lg-8">
+        <!-- ADDED (v2): tasks already stored in the database for this child + date (edit / delete) -->
+        <div class="glass-card p-4 mb-4">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <h2 class="h6 mb-0">Saved Schedule <span id="savedBadge" class="badge-pastel badge-lavender ms-1">none</span></h2>
+            <button type="button" id="deleteScheduleBtn" class="btn-pastel btn-pastel-danger d-none"><i class="fa-solid fa-trash"></i> Delete schedule</button>
+          </div>
+          <div id="savedList"></div>
+          <div id="savedEmpty" class="empty-state">No saved tasks for this child on this date yet.</div>
+        </div>
+
+        <!-- new tasks (not yet saved) -->
         <div class="glass-card p-4">
-          <h2 class="h6 mb-3">Today's Routine</h2>
-          <div id="dropzone" class="schedule-dropzone">
-            <div id="dropHint" class="empty-state"><i class="fa-solid fa-hand-pointer fa-2x mb-2"></i><p class="mb-0">Drop activities here</p></div>
+          <h2 class="h6 mb-3">New Tasks</h2>
+          <div id="dropzone" class="schedule-dropzone" style="min-height:160px">
+            <div id="dropHint" class="empty-state"><i class="fa-solid fa-hand-pointer fa-2x mb-2"></i><p class="mb-0">Drag or tap activities to add them here</p></div>
             <div id="draftList"></div>
           </div>
           <div id="builderAlert" class="alert-box d-none mt-3"></div>
           <div class="d-flex justify-content-between flex-wrap gap-2 mt-3">
             <button type="button" id="clearBtn" class="btn-pastel btn-pastel-glass">Clear</button>
-            <button type="button" id="saveBtn" class="btn-pastel btn-pastel-mint"><i class="fa-solid fa-floppy-disk"></i> Save Schedule</button>
+            <button type="button" id="saveBtn" class="btn-pastel btn-pastel-mint"><i class="fa-solid fa-floppy-disk"></i> Save new tasks</button>
           </div>
         </div>
       </div>
@@ -63,16 +74,14 @@
   </main>
 
   <script src="js/api.js"></script>
-  <!-- ADDED: AuthAPI / ChildrenAPI / SchedulesAPI / TasksAPI (api.js left untouched) -->
+  <!-- ADDED: AuthAPI / UsersAPI / ChildrenAPI / SchedulesAPI / TasksAPI / HealthAPI (api.js left untouched) -->
   <script src="js/api-endpoints.js"></script>
   <script src="js/script.js"></script>
-  <!-- ADDED: shared page bootstrap (auth guard + navbar) -->
   <script src="js/page-init.js"></script>
   <script>
     const user = initPage('schedule');
     const $ = (id) => document.getElementById(id);
 
-    // Preset activities (icon = Font Awesome class stored in tasks.icon)
     const ACTIVITIES = [
       { name: 'Wake up', icon: 'fa-sun' }, { name: 'Brush teeth', icon: 'fa-tooth' },
       { name: 'Get dressed', icon: 'fa-shirt' }, { name: 'Eat breakfast', icon: 'fa-utensils' },
@@ -80,7 +89,15 @@
       { name: 'Snack', icon: 'fa-apple-whole' }, { name: 'Bath time', icon: 'fa-bath' },
       { name: 'Bedtime', icon: 'fa-bed' },
     ];
-    let draft = [];   // [{name, icon, time, duration}]
+    let schedules = [];  // schedule rows for the selected child (from DB)
+    let schedule = null; // schedule for the selected child + date, or null
+    let saved = [];      // its tasks (from DB)
+    let draft = [];      // new tasks not yet saved
+
+    const byTime = (a, b) => (a.time || '99').localeCompare(b.time || '99') || a.id - b.id;
+    const numOrNull = (v) => (v === '' || v === null || v === undefined) ? null : Number(v);
+    const showAlert = (msg) => { const a = $('builderAlert'); a.className = 'alert-box alert-error mt-3'; a.textContent = msg; };
+    const clearAlert = () => { $('builderAlert').className = 'alert-box d-none mt-3'; };
 
     $('dateInput').value = getTodayISO();
     $('activityBank').innerHTML = ACTIVITIES.map((a, i) => `
@@ -88,6 +105,77 @@
         <i class="fa-solid ${a.icon} fa-lg mb-1"></i><div class="small fw-semibold">${escapeHtml(a.name)}</div>
       </div>`).join('');
 
+    /* ---------- READ: schedule + tasks from the database ---------- */
+    async function loadSchedule() {
+      const childId = $('childSelect').value, date = $('dateInput').value;
+      schedules = []; schedule = null; saved = [];
+      if (childId) {
+        try {
+          schedules = await SchedulesAPI.list(user.id, childId);
+          schedule = schedules.find(s => s.date === date) || null;
+          if (schedule) saved = (await TasksAPI.list(user.id, schedule.id)).sort(byTime);
+        } catch (err) { showToast(err.message, 'rose'); }
+      }
+      renderChips(); renderSaved();
+    }
+
+    function renderChips() {
+      $('dateChips').innerHTML = schedules.map(s => `
+        <button type="button" class="badge-pastel ${s.date === $('dateInput').value ? 'badge-sky' : 'badge-lavender'}" style="cursor:pointer" data-date="${escapeHtml(s.date)}">${escapeHtml(s.date)}</button>`).join('')
+        || '<span class="small text-muted">None yet</span>';
+    }
+
+    function renderSaved() {
+      $('savedBadge').textContent = schedule ? `#${schedule.id} • ${schedule.date}` : 'none';
+      $('deleteScheduleBtn').classList.toggle('d-none', !schedule);
+      $('savedEmpty').classList.toggle('d-none', saved.length > 0);
+      $('savedList').innerHTML = saved.map(t => `
+        <div class="timeline-task-card draft-row ${t.status === 'completed' ? 'is-completed' : ''}" data-id="${t.id}">
+          <i class="fa-solid ${escapeHtml(t.icon || 'fa-tasks')}"></i>
+          <input class="glass-input flex-grow-1" data-field="name" value="${escapeHtml(t.name)}" maxlength="150" aria-label="Task name" />
+          <input type="time" class="glass-input" data-field="time" value="${escapeHtml(t.time || '')}" aria-label="Start time" />
+          <input type="number" min="0" class="glass-input" data-field="duration" value="${escapeHtml(t.duration ?? '')}" placeholder="min" aria-label="Duration in minutes" style="max-width:90px" />
+          <label class="small fw-semibold d-flex align-items-center gap-1"><input type="checkbox" data-field="done" ${t.status === 'completed' ? 'checked' : ''} /> Done</label>
+          <button type="button" class="btn-pastel btn-pastel-sky px-3" data-save="${t.id}" aria-label="Save task"><i class="fa-solid fa-floppy-disk"></i></button>
+          <button type="button" class="btn-pastel btn-pastel-danger px-3" data-delete="${t.id}" aria-label="Delete task"><i class="fa-solid fa-trash"></i></button>
+        </div>`).join('');
+    }
+
+    /* ---------- UPDATE / DELETE a saved task ---------- */
+    $('savedList').addEventListener('click', async (e) => {
+      const saveId = e.target.closest('[data-save]')?.dataset.save;
+      const delId = e.target.closest('[data-delete]')?.dataset.delete;
+      const row = e.target.closest('[data-id]');
+      if (!row) return;
+      const task = saved.find(t => String(t.id) === row.dataset.id);
+      try {
+        if (saveId) {
+          const name = row.querySelector('[data-field="name"]').value.trim();
+          if (!name) return showToast('Task name cannot be empty.', 'peach');
+          await TasksAPI.update(task.id, {
+            user_id: user.id, schedule_id: task.schedule_id, name, icon: task.icon,
+            time: row.querySelector('[data-field="time"]').value || null,
+            duration: numOrNull(row.querySelector('[data-field="duration"]').value),
+            status: row.querySelector('[data-field="done"]').checked ? 'completed' : 'pending',
+          });
+          showToast('Task updated.', 'mint');
+          await loadSchedule();
+        } else if (delId && confirm('Delete this task?')) {
+          await TasksAPI.remove(task.id, user.id);
+          showToast('Task deleted.', 'peach');
+          await loadSchedule();
+        }
+      } catch (err) { showToast(err.message, 'rose'); }
+    });
+
+    /* ---------- DELETE the whole schedule (its tasks are removed by ON DELETE CASCADE) ---------- */
+    $('deleteScheduleBtn').addEventListener('click', async () => {
+      if (!schedule || !confirm('Delete this schedule and all of its tasks?')) return;
+      try { await SchedulesAPI.remove(schedule.id, user.id); showToast('Schedule deleted.', 'peach'); await loadSchedule(); }
+      catch (err) { showToast(err.message, 'rose'); }
+    });
+
+    /* ---------- draft (new) tasks: drag/drop + tap ---------- */
     function renderDraft() {
       $('dropHint').classList.toggle('d-none', draft.length > 0);
       $('draftList').innerHTML = draft.map((t, i) => `
@@ -99,9 +187,8 @@
           <button type="button" class="btn-pastel btn-pastel-danger px-3" data-remove="${i}" aria-label="Remove"><i class="fa-solid fa-xmark"></i></button>
         </div>`).join('');
     }
-    function addActivity(a) { draft.push({ name: a.name, icon: a.icon, time: '', duration: '' }); renderDraft(); }
+    function addActivity(a) { draft.push({ name: a.name, icon: a.icon, time: '', duration: '' }); clearAlert(); renderDraft(); }
 
-    // Drag & drop + keyboard/tap fallback
     $('activityBank').addEventListener('dragstart', (e) => {
       const el = e.target.closest('.activity-bank-item'); if (el) e.dataTransfer.setData('text/plain', el.dataset.idx);
     });
@@ -125,37 +212,43 @@
     $('draftList').addEventListener('click', (e) => {
       const rm = e.target.closest('[data-remove]'); if (rm) { draft.splice(rm.dataset.remove, 1); renderDraft(); }
     });
-    $('clearBtn').addEventListener('click', () => { draft = []; renderDraft(); });
+    $('clearBtn').addEventListener('click', () => { draft = []; renderDraft(); clearAlert(); });
 
-    // Save: reuse the schedule for (child, date) if it exists, then create tasks
+    /* ---------- CREATE: schedule (if missing) + new tasks ---------- */
     $('saveBtn').addEventListener('click', async () => {
       const childId = $('childSelect').value, date = $('dateInput').value;
-      const alertBox = $('builderAlert');
-      alertBox.className = 'alert-box d-none';
-      if (!childId || !date || draft.length === 0) {
-        alertBox.className = 'alert-box alert-error'; alertBox.textContent = 'Choose a child, a date, and add at least one activity.'; return;
-      }
+      clearAlert();
+      if (!childId || !date || draft.length === 0) return showAlert('Choose a child, a date, and add at least one activity.');
       $('saveBtn').disabled = true;
       try {
-        const existing = (await SchedulesAPI.list(user.id, childId)).find(s => s.date === date);
-        const schedule = existing || await SchedulesAPI.create({ user_id: user.id, child_id: Number(childId), date });
+        const target = schedule || await SchedulesAPI.create({ user_id: user.id, child_id: Number(childId), date });
         for (const t of draft) {
-          await TasksAPI.create({ user_id: user.id, schedule_id: schedule.id, name: t.name, icon: t.icon, time: t.time || null, duration: t.duration || null });
+          await TasksAPI.create({ user_id: user.id, schedule_id: target.id, name: t.name, icon: t.icon,
+            time: t.time || null, duration: numOrNull(t.duration) });
         }
-        showToast('Schedule saved!', 'mint'); playSuccessChime();
+        showToast('Saved to the database!', 'mint'); playSuccessChime();
         draft = []; renderDraft();
-      } catch (err) {
-        alertBox.className = 'alert-box alert-error'; alertBox.textContent = err.message;
-      } finally { $('saveBtn').disabled = false; }
+        await loadSchedule();
+      } catch (err) { showAlert(err.message); }
+      finally { $('saveBtn').disabled = false; }
+    });
+
+    $('childSelect').addEventListener('change', loadSchedule);
+    $('dateInput').addEventListener('change', loadSchedule);
+    $('dateChips').addEventListener('click', (e) => {
+      const chip = e.target.closest('[data-date]'); if (chip) { $('dateInput').value = chip.dataset.date; loadSchedule(); }
     });
 
     (async () => {
       try {
         const children = await ChildrenAPI.list(user.id);
         fillSelect($('childSelect'), children, c => c.name, children.length ? null : 'Add a child on the dashboard first');
+        const wanted = new URLSearchParams(location.search).get('child_id');
+        if (wanted) $('childSelect').value = wanted;
       } catch (err) { showToast(err.message, 'rose'); }
+      renderDraft();
+      loadSchedule();
     })();
-    renderDraft();
   </script>
 </body>
 </html>

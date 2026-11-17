@@ -15,6 +15,13 @@ function initPage(activePage) {
       document.querySelector(toggle.dataset.bsTarget).classList.toggle('show');
     });
   }
+  // ADDED (v2): confirm the user still exists in the database; refresh name/role from it.
+  // If the row is gone (e.g. schema re-imported) the stale login is cleared.
+  UsersAPI.verify(user)
+    .then((fresh) => AuthAPI.updateUser(fresh))
+    .catch((err) => {
+      if (err.status === 404) { AuthAPI.logout(); window.location.href = 'index.html'; }
+    });
   return user;
 }
 
