@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KiddoPath — Dashboard</title>
+  <!-- ADDED: fonts + Font Awesome (used by the navbar in script.js and the page icons) -->
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link href="css/style.css" rel="stylesheet" />
+  <!-- ADDED: extra utilities/components, loaded after style.css -->
+  <link href="css/pages-extra.css" rel="stylesheet" />
+</head>
+<body>
+  <!-- navbar is injected by renderGlassNavbar() in script.js -->
+  <div id="appNavbar"></div>
+
+  <main class="container page-main">
+    <!-- ADDED: page header -->
+    <div class="page-header">
+      <div>
+        <h1 class="h3 mb-1" id="welcomeTitle">Welcome back!</h1>
+        <p class="text-secondary small mb-0" id="todayLabel"></p>
+      </div>
+      <button type="button" id="addChildBtn" class="btn-pastel btn-pastel-sky"><i class="fa-solid fa-plus"></i> Add Child</button>
+    </div>
+
+    <!-- ADDED: summary stats (filled by JS) -->
+    <div class="row mb-3">
+      <div class="col-sm-6 col-lg-3"><div class="glass-card stat-tile"><div class="pastel-icon-tile tile-sky"><i class="fa-solid fa-children"></i></div><div><div class="stat-value" id="statChildren">0</div><div class="small text-secondary">Children</div></div></div></div>
+      <div class="col-sm-6 col-lg-3"><div class="glass-card stat-tile"><div class="pastel-icon-tile tile-lavender"><i class="fa-solid fa-calendar-day"></i></div><div><div class="stat-value" id="statSchedules">0</div><div class="small text-secondary">Schedules today</div></div></div></div>
+      <div class="col-sm-6 col-lg-3"><div class="glass-card stat-tile"><div class="pastel-icon-tile tile-peach"><i class="fa-solid fa-list-check"></i></div><div><div class="stat-value" id="statTasks">0</div><div class="small text-secondary">Tasks today</div></div></div></div>
+      <div class="col-sm-6 col-lg-3"><div class="glass-card stat-tile"><div class="pastel-icon-tile tile-mint"><i class="fa-solid fa-circle-check"></i></div><div><div class="stat-value" id="statDone">0</div><div class="small text-secondary">Completed today</div></div></div></div>
+    </div>
+
+    <!-- ADDED: children list -->
+    <div class="glass-card p-4">
+      <h2 class="h6 mb-3">My Children</h2>
+      <div id="childrenList" class="row"></div>
+      <div id="childrenEmpty" class="empty-state d-none">
+        <i class="fa-solid fa-child-reaching fa-2x mb-2"></i>
+        <p class="mb-0">No child profiles yet. Click “Add Child” to get started.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- ADDED: add/edit child modal (fields match children table in schema.sql) -->
+  <div id="childModal" class="modal-overlay">
+    <div class="modal-content glass-modal">
+      <h2 class="h6 mb-3" id="childModalTitle">Add Child</h2>
+      <div id="childAlert" class="alert-box d-none"></div>
+      <form id="childForm" novalidate>
+        <input type="hidden" id="childId" />
+        <div class="mb-3"><label class="glass-label" for="childName">Name</label><input id="childName" class="glass-input" maxlength="100" required /></div>
+        <div class="mb-3"><label class="glass-label" for="childAge">Age</label><input id="childAge" type="number" min="0" max="25" class="glass-input" required /></div>
+        <div class="mb-3"><label class="glass-label" for="childDomain">Delay domain (optional)</label><input id="childDomain" class="glass-input" maxlength="100" placeholder="e.g. Speech, Motor, Social" /></div>
+        <div class="mb-3"><label class="glass-label" for="childNotes">Notes (optional)</label><textarea id="childNotes" class="glass-textarea"></textarea></div>
+        <div class="mb-3"><label class="glass-label" for="childPhoto">Photo URL (optional)</label><input id="childPhoto" class="glass-input" maxlength="255" /></div>
+        <div class="d-flex gap-2 justify-content-between">
+          <button type="button" id="childCancel" class="btn-pastel btn-pastel-glass">Cancel</button>
+          <button type="submit" class="btn-pastel btn-pastel-sky">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <!-- ADDED: AuthAPI / ChildrenAPI / SchedulesAPI / TasksAPI (api.js left untouched) -->
+  <script src="js/api-endpoints.js"></script>
+  <script src="js/script.js"></script>
+  <!-- ADDED: shared page bootstrap (auth guard + navbar) -->
+  <script src="js/page-init.js"></script>
+  <script>
+    const user = initPage('dashboard');
+    let children = [];
+
+    const $ = (id) => document.getElementById(id);
+    const modal = $('childModal');
+
+    $('welcomeTitle').textContent = `Welcome back, ${user.name}!`;
+    $('todayLabel').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+
+    function renderChildren() {
+      $('childrenEmpty').classList.toggle('d-none', children.length > 0);
+      $('childrenList').innerHTML = children.map(c => `
+        <div class="col-md-6 col-lg-4">
+          <div class="glass-panel-subtle p-3 h-100">
+            <div class="d-flex align-items-center gap-3 mb-2">
+              ${childAvatarHtml(c)}
+              <div class="flex-grow-1">
+                <div class="fw-bold">${escapeHtml(c.name)}</div>
+                <div class="small text-secondary">Age ${escapeHtml(c.age)}${c.delay_domain ? ' • ' + escapeHtml(c.delay_domain) : ''}</div>
+              </div>
+            </div>
+            ${c.notes ? `<p class="small text-secondary">${escapeHtml(c.notes)}</p>` : ''}
+            <div class="d-flex gap-2 flex-wrap">
+              <a class="btn-pastel btn-pastel-mint px-3" href="child-view.html?child_id=${c.id}">Open</a>
+              <button class="btn-pastel btn-pastel-glass px-3" data-edit="${c.id}">Edit</button>
+              <button class="btn-pastel btn-pastel-danger px-3" data-del="${c.id}">Delete</button>
+            </div>
+          </div>
+        </div>`).join('');
+    }
+
+    async function loadDashboard() {
+      try {
+        children = await ChildrenAPI.list(user.id);
+        renderChildren();
+        $('statChildren').textContent = children.length;
+        const today = getTodayISO();
+        const schedules = (await SchedulesAPI.list(user.id)).filter(s => s.date === today);
+        const ids = new Set(schedules.map(s => s.id));
+        const tasks = (await TasksAPI.list(user.id)).filter(t => ids.has(t.schedule_id));
+        $('statSchedules').textContent = schedules.length;
+        $('statTasks').textContent = tasks.length;
+        $('statDone').textContent = tasks.filter(t => t.status === 'completed').length;
+      } catch (err) { showToast(err.message, 'rose'); }
+    }
+
+    function openModal(child = null) {
+      $('childAlert').classList.add('d-none');
+      $('childModalTitle').textContent = child ? 'Edit Child' : 'Add Child';
+      $('childId').value = child ? child.id : '';
+      $('childName').value = child ? child.name : '';
+      $('childAge').value = child ? child.age : '';
+      $('childDomain').value = child?.delay_domain || '';
+      $('childNotes').value = child?.notes || '';
+      $('childPhoto').value = child?.photo_url || '';
+      modal.classList.add('show');
+    }
+    const closeModal = () => modal.classList.remove('show');
+
+    $('addChildBtn').addEventListener('click', () => openModal());
+    $('childCancel').addEventListener('click', closeModal);
+
+    $('childForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        user_id: user.id,
+        name: $('childName').value.trim(),
+        age: $('childAge').value,
+        delay_domain: $('childDomain').value.trim(),
+        notes: $('childNotes').value.trim(),
+        photo_url: $('childPhoto').value.trim(),
+      };
+      try {
+        const id = $('childId').value;
+        if (id) await ChildrenAPI.update(id, payload); else await ChildrenAPI.create(payload);
+        closeModal();
+        showToast('Child profile saved.', 'mint');
+        loadDashboard();
+      } catch (err) {
+        $('childAlert').className = 'alert-box alert-error';
+        $('childAlert').textContent = err.message;
+      }
+    });
+
+    $('childrenList').addEventListener('click', async (e) => {
+      const editId = e.target.closest('[data-edit]')?.dataset.edit;
+      const delId = e.target.closest('[data-del]')?.dataset.del;
+      if (editId) openModal(children.find(c => String(c.id) === editId));
+      if (delId && confirm('Delete this child and all of their schedules?')) {
+        try { await ChildrenAPI.remove(delId, user.id); showToast('Child deleted.', 'peach'); loadDashboard(); }
+        catch (err) { showToast(err.message, 'rose'); }
+      }
+    });
+
+    loadDashboard();
+  </script>
+</body>
+</html>

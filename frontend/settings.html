@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KiddoPath — Settings</title>
+  <!-- ADDED: fonts + Font Awesome (used by the navbar in script.js and the page icons) -->
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link href="css/style.css" rel="stylesheet" />
+  <!-- ADDED: extra utilities/components, loaded after style.css -->
+  <link href="css/pages-extra.css" rel="stylesheet" />
+</head>
+<body>
+  <div id="appNavbar"></div>
+
+  <main class="container page-main">
+    <div class="page-header">
+      <div>
+        <h1 class="h3 mb-1">Settings</h1>
+        <p class="text-secondary small mb-0">Accessibility, sound, and notifications. Saved on this device.</p>
+      </div>
+    </div>
+
+    <!-- ADDED: every field maps to a key in DEFAULT_SETTINGS (script.js) and saves through saveAppSettings() -->
+    <div class="row">
+      <div class="col-lg-6">
+        <div class="glass-card p-4">
+          <h2 class="h6 mb-2">Display</h2>
+          <div class="setting-row"><label for="fontSize" class="fw-semibold">Text size</label>
+            <select id="fontSize" class="glass-select" style="max-width:160px"><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option></select></div>
+          <div class="setting-row"><label for="contrast" class="fw-semibold">Contrast</label>
+            <select id="contrast" class="glass-select" style="max-width:160px"><option value="normal">Normal</option><option value="high">High</option></select></div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="glass-card p-4">
+          <h2 class="h6 mb-2">Sound &amp; Voice</h2>
+          <div class="setting-row"><label for="soundEnabled" class="fw-semibold">Sounds &amp; speech</label><input type="checkbox" id="soundEnabled" /></div>
+          <div class="setting-row"><label for="voiceRate" class="fw-semibold">Voice speed</label><input type="range" id="voiceRate" min="0.5" max="1.5" step="0.05" /></div>
+          <div class="setting-row"><label for="language" class="fw-semibold">Voice language</label>
+            <select id="language" class="glass-select" style="max-width:160px"><option value="en-US">English (US)</option><option value="en-GB">English (UK)</option><option value="fil-PH">Filipino</option></select></div>
+          <div class="mt-3"><button type="button" id="testVoiceBtn" class="btn-pastel btn-pastel-lavender"><i class="fa-solid fa-volume-high"></i> Test voice</button></div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="glass-card p-4">
+          <h2 class="h6 mb-2">Notifications</h2>
+          <div class="setting-row"><label for="taskReminders" class="fw-semibold">Task reminders</label><input type="checkbox" id="taskReminders" /></div>
+          <div class="setting-row"><label for="dailySummary" class="fw-semibold">Daily summary</label><input type="checkbox" id="dailySummary" /></div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="glass-card p-4">
+          <h2 class="h6 mb-2">Account</h2>
+          <p class="small text-secondary mb-1" id="acctName"></p>
+          <p class="small text-secondary mb-3" id="acctEmail"></p>
+          <button type="button" id="resetBtn" class="btn-pastel btn-pastel-glass">Reset settings to default</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <!-- ADDED: AuthAPI / ChildrenAPI / SchedulesAPI / TasksAPI (api.js left untouched) -->
+  <script src="js/api-endpoints.js"></script>
+  <script src="js/script.js"></script>
+  <!-- ADDED: shared page bootstrap (auth guard + navbar) -->
+  <script src="js/page-init.js"></script>
+  <script>
+    const user = initPage('settings');
+    const $ = (id) => document.getElementById(id);
+    $('acctName').textContent = `${user.name} (${user.role})`;
+    $('acctEmail').textContent = user.email;
+
+    function loadSettingsIntoForm() {
+      const s = getAppSettings();
+      $('fontSize').value = s.fontSize; $('contrast').value = s.contrast; $('language').value = s.language;
+      $('soundEnabled').checked = s.soundEnabled; $('voiceRate').value = s.voiceRate;
+      $('taskReminders').checked = s.taskReminders; $('dailySummary').checked = s.dailySummary;
+    }
+    // Auto-save on every change; saveAppSettings() also re-applies font size / contrast instantly
+    function bind(id, key, prop = 'value', parse = (v) => v) {
+      $(id).addEventListener('change', () => { saveAppSettings({ [key]: parse($(id)[prop]) }); showToast('Setting saved.', 'mint'); });
+    }
+    bind('fontSize', 'fontSize'); bind('contrast', 'contrast'); bind('language', 'language');
+    bind('soundEnabled', 'soundEnabled', 'checked'); bind('voiceRate', 'voiceRate', 'value', parseFloat);
+    bind('taskReminders', 'taskReminders', 'checked'); bind('dailySummary', 'dailySummary', 'checked');
+
+    $('testVoiceBtn').addEventListener('click', () => speakText('Hello! This is how I sound.'));
+    $('resetBtn').addEventListener('click', () => { localStorage.removeItem(SETTINGS_STORAGE_KEY); applyAccessibilitySettings(); loadSettingsIntoForm(); showToast('Settings reset.', 'peach'); });
+
+    loadSettingsIntoForm();
+  </script>
+</body>
+</html>

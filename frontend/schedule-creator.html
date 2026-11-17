@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KiddoPath — Schedule Builder</title>
+  <!-- ADDED: fonts + Font Awesome (used by the navbar in script.js and the page icons) -->
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link href="css/style.css" rel="stylesheet" />
+  <!-- ADDED: extra utilities/components, loaded after style.css -->
+  <link href="css/pages-extra.css" rel="stylesheet" />
+</head>
+<body>
+  <div id="appNavbar"></div>
+
+  <main class="container page-main">
+    <div class="page-header">
+      <div>
+        <h1 class="h3 mb-1">Schedule Builder</h1>
+        <p class="text-secondary small mb-0">Pick a child and date, then drag (or tap) activities into the schedule.</p>
+      </div>
+    </div>
+
+    <!-- ADDED: child + date pickers -->
+    <div class="glass-card p-4 mb-4">
+      <div class="row">
+        <div class="col-md-6"><label class="glass-label" for="childSelect">Child</label><select id="childSelect" class="glass-select"></select></div>
+        <div class="col-md-6"><label class="glass-label" for="dateInput">Date</label><input type="date" id="dateInput" class="glass-input" /></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <!-- ADDED: activity bank (draggable presets + custom task) -->
+      <div class="col-lg-4">
+        <div class="glass-card p-4 h-100">
+          <h2 class="h6 mb-3">Activity Bank</h2>
+          <div id="activityBank" class="activity-grid mb-4"></div>
+          <label class="glass-label" for="customName">Custom activity</label>
+          <div class="d-flex gap-2">
+            <input id="customName" class="glass-input" maxlength="150" placeholder="e.g. Feed the fish" />
+            <button type="button" id="customAddBtn" class="btn-pastel btn-pastel-lavender px-3" aria-label="Add custom activity"><i class="fa-solid fa-plus"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADDED: drop zone / draft schedule -->
+      <div class="col-lg-8">
+        <div class="glass-card p-4">
+          <h2 class="h6 mb-3">Today's Routine</h2>
+          <div id="dropzone" class="schedule-dropzone">
+            <div id="dropHint" class="empty-state"><i class="fa-solid fa-hand-pointer fa-2x mb-2"></i><p class="mb-0">Drop activities here</p></div>
+            <div id="draftList"></div>
+          </div>
+          <div id="builderAlert" class="alert-box d-none mt-3"></div>
+          <div class="d-flex justify-content-between flex-wrap gap-2 mt-3">
+            <button type="button" id="clearBtn" class="btn-pastel btn-pastel-glass">Clear</button>
+            <button type="button" id="saveBtn" class="btn-pastel btn-pastel-mint"><i class="fa-solid fa-floppy-disk"></i> Save Schedule</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <!-- ADDED: AuthAPI / ChildrenAPI / SchedulesAPI / TasksAPI (api.js left untouched) -->
+  <script src="js/api-endpoints.js"></script>
+  <script src="js/script.js"></script>
+  <!-- ADDED: shared page bootstrap (auth guard + navbar) -->
+  <script src="js/page-init.js"></script>
+  <script>
+    const user = initPage('schedule');
+    const $ = (id) => document.getElementById(id);
+
+    // Preset activities (icon = Font Awesome class stored in tasks.icon)
+    const ACTIVITIES = [
+      { name: 'Wake up', icon: 'fa-sun' }, { name: 'Brush teeth', icon: 'fa-tooth' },
+      { name: 'Get dressed', icon: 'fa-shirt' }, { name: 'Eat breakfast', icon: 'fa-utensils' },
+      { name: 'Study time', icon: 'fa-book' }, { name: 'Play time', icon: 'fa-puzzle-piece' },
+      { name: 'Snack', icon: 'fa-apple-whole' }, { name: 'Bath time', icon: 'fa-bath' },
+      { name: 'Bedtime', icon: 'fa-bed' },
+    ];
+    let draft = [];   // [{name, icon, time, duration}]
+
+    $('dateInput').value = getTodayISO();
+    $('activityBank').innerHTML = ACTIVITIES.map((a, i) => `
+      <div class="activity-bank-item" draggable="true" data-idx="${i}" tabindex="0">
+        <i class="fa-solid ${a.icon} fa-lg mb-1"></i><div class="small fw-semibold">${escapeHtml(a.name)}</div>
+      </div>`).join('');
+
+    function renderDraft() {
+      $('dropHint').classList.toggle('d-none', draft.length > 0);
+      $('draftList').innerHTML = draft.map((t, i) => `
+        <div class="timeline-task-card draft-row" data-i="${i}">
+          <i class="fa-solid ${escapeHtml(t.icon)}"></i>
+          <span class="fw-bold flex-grow-1">${escapeHtml(t.name)}</span>
+          <input type="time" class="glass-input" data-field="time" value="${escapeHtml(t.time)}" aria-label="Start time" />
+          <input type="number" min="0" class="glass-input" data-field="duration" value="${escapeHtml(t.duration)}" placeholder="min" aria-label="Duration in minutes" style="max-width:90px" />
+          <button type="button" class="btn-pastel btn-pastel-danger px-3" data-remove="${i}" aria-label="Remove"><i class="fa-solid fa-xmark"></i></button>
+        </div>`).join('');
+    }
+    function addActivity(a) { draft.push({ name: a.name, icon: a.icon, time: '', duration: '' }); renderDraft(); }
+
+    // Drag & drop + keyboard/tap fallback
+    $('activityBank').addEventListener('dragstart', (e) => {
+      const el = e.target.closest('.activity-bank-item'); if (el) e.dataTransfer.setData('text/plain', el.dataset.idx);
+    });
+    $('activityBank').addEventListener('click', (e) => {
+      const el = e.target.closest('.activity-bank-item'); if (el) addActivity(ACTIVITIES[el.dataset.idx]);
+    });
+    const dz = $('dropzone');
+    dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('drag-over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+    dz.addEventListener('drop', (e) => {
+      e.preventDefault(); dz.classList.remove('drag-over');
+      const a = ACTIVITIES[e.dataTransfer.getData('text/plain')]; if (a) addActivity(a);
+    });
+    $('customAddBtn').addEventListener('click', () => {
+      const name = $('customName').value.trim(); if (!name) return;
+      addActivity({ name, icon: 'fa-tasks' }); $('customName').value = '';
+    });
+    $('draftList').addEventListener('input', (e) => {
+      const row = e.target.closest('[data-i]'); if (row && e.target.dataset.field) draft[row.dataset.i][e.target.dataset.field] = e.target.value;
+    });
+    $('draftList').addEventListener('click', (e) => {
+      const rm = e.target.closest('[data-remove]'); if (rm) { draft.splice(rm.dataset.remove, 1); renderDraft(); }
+    });
+    $('clearBtn').addEventListener('click', () => { draft = []; renderDraft(); });
+
+    // Save: reuse the schedule for (child, date) if it exists, then create tasks
+    $('saveBtn').addEventListener('click', async () => {
+      const childId = $('childSelect').value, date = $('dateInput').value;
+      const alertBox = $('builderAlert');
+      alertBox.className = 'alert-box d-none';
+      if (!childId || !date || draft.length === 0) {
+        alertBox.className = 'alert-box alert-error'; alertBox.textContent = 'Choose a child, a date, and add at least one activity.'; return;
+      }
+      $('saveBtn').disabled = true;
+      try {
+        const existing = (await SchedulesAPI.list(user.id, childId)).find(s => s.date === date);
+        const schedule = existing || await SchedulesAPI.create({ user_id: user.id, child_id: Number(childId), date });
+        for (const t of draft) {
+          await TasksAPI.create({ user_id: user.id, schedule_id: schedule.id, name: t.name, icon: t.icon, time: t.time || null, duration: t.duration || null });
+        }
+        showToast('Schedule saved!', 'mint'); playSuccessChime();
+        draft = []; renderDraft();
+      } catch (err) {
+        alertBox.className = 'alert-box alert-error'; alertBox.textContent = err.message;
+      } finally { $('saveBtn').disabled = false; }
+    });
+
+    (async () => {
+      try {
+        const children = await ChildrenAPI.list(user.id);
+        fillSelect($('childSelect'), children, c => c.name, children.length ? null : 'Add a child on the dashboard first');
+      } catch (err) { showToast(err.message, 'rose'); }
+    })();
+    renderDraft();
+  </script>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KiddoPath — Child View</title>
+  <!-- ADDED: fonts + Font Awesome (used by the navbar in script.js and the page icons) -->
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link href="css/style.css" rel="stylesheet" />
+  <!-- ADDED: extra utilities/components, loaded after style.css -->
+  <link href="css/pages-extra.css" rel="stylesheet" />
+</head>
+<body>
+  <div id="appNavbar"></div>
+
+  <main class="container page-main">
+    <div class="page-header">
+      <div>
+        <h1 class="h3 mb-1">Child View</h1>
+        <p class="text-secondary small mb-0">Big, calm, one-step-at-a-time routine.</p>
+      </div>
+      <select id="childSelect" class="glass-select" style="max-width:240px" aria-label="Choose child"></select>
+    </div>
+
+    <div class="row">
+      <!-- ADDED: current task hero + pie timer -->
+      <div class="col-lg-7">
+        <div class="child-task-hero text-center">
+          <div id="heroEmpty" class="empty-state"><i class="fa-solid fa-calendar-xmark fa-2x mb-2"></i><p class="mb-0">No schedule for today.</p></div>
+          <div id="heroBody" class="d-none">
+            <span class="badge-pastel badge-sky mb-2">Now</span>
+            <div class="pastel-icon-tile tile-peach mb-2" style="margin:0 auto;width:84px;height:84px;font-size:2.2rem"><i id="heroIcon" class="fa-solid fa-tasks"></i></div>
+            <h2 class="display-6 mb-1" id="heroName">Task</h2>
+            <p class="text-secondary" id="heroTime"></p>
+            <div class="pie-timer-ring mb-3" id="timerRing"><div class="pie-timer-inner"><span class="fw-bold fs-6" id="timerText">--:--</span></div></div>
+            <div class="d-flex gap-2 justify-content-center flex-wrap">
+              <button type="button" id="speakBtn" class="btn-pastel btn-pastel-lavender"><i class="fa-solid fa-volume-high"></i> Say it</button>
+              <button type="button" id="timerBtn" class="btn-pastel btn-pastel-sky"><i class="fa-solid fa-play"></i> Start timer</button>
+              <button type="button" id="doneBtn" class="btn-pastel btn-pastel-mint"><i class="fa-solid fa-check"></i> All done!</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADDED: timeline of today's tasks -->
+      <div class="col-lg-5">
+        <div class="glass-card p-4 h-100">
+          <h2 class="h6 mb-3">Today's Routine</h2>
+          <div id="timeline" class="d-flex flex-column gap-2"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADDED: My Talking Board (AAC) — tap to speak via speakText() -->
+    <div class="glass-card p-4 mt-4">
+      <h2 class="h6 mb-3">My Talking Board</h2>
+      <div id="aacBoard" class="row"></div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <!-- ADDED: AuthAPI / ChildrenAPI / SchedulesAPI / TasksAPI (api.js left untouched) -->
+  <script src="js/api-endpoints.js"></script>
+  <script src="js/script.js"></script>
+  <!-- ADDED: shared page bootstrap (auth guard + navbar) -->
+  <script src="js/page-init.js"></script>
+  <script>
+    const user = initPage('child');
+    const $ = (id) => document.getElementById(id);
+    let tasks = [], current = null, timerId = null, remaining = 0, total = 0;
+
+    // Talking board cards (edit freely)
+    const AAC = [
+      { text: 'I want water', icon: 'fa-glass-water', tile: 'tile-sky' }, { text: 'I am hungry', icon: 'fa-utensils', tile: 'tile-peach' },
+      { text: 'I need help', icon: 'fa-hand', tile: 'tile-rose' }, { text: 'Bathroom please', icon: 'fa-toilet', tile: 'tile-mint' },
+      { text: 'Yes', icon: 'fa-thumbs-up', tile: 'tile-mint' }, { text: 'No', icon: 'fa-thumbs-down', tile: 'tile-rose' },
+      { text: 'I am tired', icon: 'fa-bed', tile: 'tile-lavender' }, { text: 'I want to play', icon: 'fa-puzzle-piece', tile: 'tile-peach' },
+    ];
+    $('aacBoard').innerHTML = AAC.map(c => `
+      <div class="col-sm-4 col-md-3"><div class="aac-card" data-say="${escapeHtml(c.text)}" tabindex="0" role="button">
+        <div class="pastel-icon-tile ${c.tile}"><i class="fa-solid ${c.icon}"></i></div><span class="fw-bold">${escapeHtml(c.text)}</span>
+      </div></div>`).join('');
+    $('aacBoard').addEventListener('click', (e) => {
+      const card = e.target.closest('.aac-card'); if (!card) return;
+      card.classList.add('speaking'); speakText(card.dataset.say);
+      setTimeout(() => card.classList.remove('speaking'), 700);
+    });
+
+    function setRing(deg) { $('timerRing').style.setProperty('--timer-deg', deg + 'deg'); }
+    function stopTimer() { clearInterval(timerId); timerId = null; $('timerBtn').innerHTML = '<i class="fa-solid fa-play"></i> Start timer'; }
+    function drawTimer() {
+      const m = String(Math.floor(remaining / 60)).padStart(2, '0'), s = String(remaining % 60).padStart(2, '0');
+      $('timerText').textContent = total ? `${m}:${s}` : '--:--';
+      setRing(total ? (remaining / total) * 360 : 360);
+    }
+
+    function pickCurrent() {
+      stopTimer();
+      current = tasks.find(t => t.status !== 'completed') || null;
+      $('heroEmpty').classList.toggle('d-none', current !== null);
+      $('heroBody').classList.toggle('d-none', current === null);
+      $('heroEmpty').querySelector('p').textContent = tasks.length ? 'All tasks done. Great job!' : 'No schedule for today.';
+      if (!current) return;
+      $('heroIcon').className = `fa-solid ${current.icon || 'fa-tasks'}`;
+      $('heroName').textContent = current.name;
+      $('heroTime').textContent = current.time ? formatTime12h(current.time) : '';
+      total = remaining = (current.duration || 0) * 60;
+      drawTimer();
+    }
+
+    function renderTimeline() {
+      $('timeline').innerHTML = tasks.map(t => `
+        <div class="timeline-task-card ${t.status === 'completed' ? 'is-completed' : ''} ${current && current.id === t.id ? 'selected-task' : ''}">
+          <div class="d-flex align-items-center gap-3">
+            <i class="fa-solid ${escapeHtml(t.icon || 'fa-tasks')}"></i>
+            <div class="flex-grow-1"><div class="fw-bold">${escapeHtml(t.name)}</div><div class="small text-secondary">${t.time ? formatTime12h(t.time) : ''}${t.duration ? ' • ' + escapeHtml(t.duration) + ' min' : ''}</div></div>
+            ${t.status === 'completed' ? '<i class="fa-solid fa-circle-check" style="color:var(--pastel-mint)"></i>' : ''}
+          </div>
+        </div>`).join('') || '<div class="empty-state">Nothing scheduled.</div>';
+    }
+
+    async function loadToday() {
+      const childId = $('childSelect').value;
+      tasks = [];
+      if (childId) {
+        try {
+          const schedule = (await SchedulesAPI.list(user.id, childId)).find(s => s.date === getTodayISO());
+          if (schedule) tasks = (await TasksAPI.list(user.id, schedule.id)).sort((a, b) => (a.time || '99').localeCompare(b.time || '99'));
+        } catch (err) { showToast(err.message, 'rose'); }
+      }
+      pickCurrent(); renderTimeline();
+    }
+
+    $('speakBtn').addEventListener('click', () => current && speakText(current.name));
+    $('timerBtn').addEventListener('click', () => {
+      if (timerId) return stopTimer();
+      if (!remaining) return showToast('This task has no duration set.', 'peach');
+      $('timerBtn').innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
+      timerId = setInterval(() => {
+        remaining--; drawTimer();
+        if (remaining <= 0) { stopTimer(); playSuccessChime(); speakText('Time is up!'); }
+      }, 1000);
+    });
+    $('doneBtn').addEventListener('click', async () => {
+      if (!current) return;
+      try {
+        // PUT replaces all editable fields, so resend the whole task
+        await TasksAPI.update(current.id, { user_id: user.id, schedule_id: current.schedule_id, name: current.name,
+          icon: current.icon, time: current.time, duration: current.duration, status: 'completed' });
+        playSuccessChime(); showToast('Great job!', 'mint'); await loadToday();
+      } catch (err) { showToast(err.message, 'rose'); }
+    });
+    $('childSelect').addEventListener('change', loadToday);
+
+    (async () => {
+      try {
+        const children = await ChildrenAPI.list(user.id);
+        fillSelect($('childSelect'), children, c => c.name);
+        const wanted = new URLSearchParams(location.search).get('child_id');   // from dashboard "Open" button
+        if (wanted) $('childSelect').value = wanted;
+        loadToday();
+      } catch (err) { showToast(err.message, 'rose'); }
+    })();
+  </script>
+</body>
+</html>

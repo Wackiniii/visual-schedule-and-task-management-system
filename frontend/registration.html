@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KiddoPath — Create Account</title>
+  <!-- ADDED: fonts + Font Awesome (used by the navbar in script.js and the page icons) -->
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link href="css/style.css" rel="stylesheet" />
+  <!-- ADDED: extra utilities/components, loaded after style.css -->
+  <link href="css/pages-extra.css" rel="stylesheet" />
+</head>
+<body class="d-flex align-items-center py-4">
+  <main class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-6">
+        <div class="glass-card p-4 p-md-5">
+          <!-- ADDED: registration form -> AuthAPI.register() -> routes/auth.php?action=register -->
+          <div class="text-center mb-4">
+            <span class="badge-pastel badge-mint mb-2">Join KiddoPath</span>
+            <h2 class="h3 mb-1">Create Your Account</h2>
+            <p class="text-secondary small mb-0">For caregivers, occupational therapists, and SPED teachers</p>
+          </div>
+
+          <div id="regAlert" class="alert-box d-none" role="alert"></div>
+
+          <form id="regForm" novalidate>
+            <div class="mb-3">
+              <label for="regName" class="glass-label">Full Name</label>
+              <input type="text" id="regName" class="glass-input" placeholder="Your name" maxlength="100" required autocomplete="name" />
+            </div>
+            <div class="mb-3">
+              <label for="regEmail" class="glass-label">Email Address</label>
+              <input type="email" id="regEmail" class="glass-input" placeholder="you@example.com" required autocomplete="email" />
+            </div>
+            <div class="mb-3">
+              <label for="regRole" class="glass-label">I am a...</label>
+              <!-- values must match the users.role ENUM in schema.sql -->
+              <select id="regRole" class="glass-select">
+                <option value="Caregiver">Caregiver</option>
+                <option value="Occupational Therapist">Occupational Therapist</option>
+                <option value="SPED Teacher">SPED Teacher</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="regPassword" class="glass-label">Password</label>
+              <input type="password" id="regPassword" class="glass-input" placeholder="At least 8 characters" required autocomplete="new-password" />
+            </div>
+            <div class="mb-4">
+              <label for="regConfirm" class="glass-label">Confirm Password</label>
+              <input type="password" id="regConfirm" class="glass-input" placeholder="Repeat your password" required autocomplete="new-password" />
+            </div>
+            <button type="submit" id="regSubmitBtn" class="btn-pastel btn-pastel-mint w-100 fs-6 mb-3"><span>Create Account</span></button>
+          </form>
+
+          <div class="glass-panel-subtle p-3 text-center mt-3">
+            <span class="small text-secondary">Already have an account?</span>
+            <a href="index.html" class="fw-bold text-decoration-none ms-1" style="color: #3b82f6;">Sign In &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <!-- ADDED: AuthAPI / ChildrenAPI / SchedulesAPI / TasksAPI (api.js left untouched) -->
+  <script src="js/api-endpoints.js"></script>
+  <script src="js/script.js"></script>
+  <!-- ADDED: shared page bootstrap (auth guard + navbar) -->
+  <script src="js/page-init.js"></script>
+  <script>
+    redirectIfAuthenticated();   // already logged in -> dashboard
+
+    const regForm = document.getElementById('regForm');
+    const regAlert = document.getElementById('regAlert');
+    const regBtn = document.getElementById('regSubmitBtn');
+
+    function showRegAlert(msg, isError = true) {
+      regAlert.className = `alert-box ${isError ? 'alert-error' : 'alert-success'}`;
+      regAlert.textContent = msg;
+    }
+
+    regForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      regAlert.className = 'alert-box d-none';
+      const name = document.getElementById('regName').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const role = document.getElementById('regRole').value;
+      const password = document.getElementById('regPassword').value;
+      const confirm = document.getElementById('regConfirm').value;
+
+      if (!name || !email || !password) return showRegAlert('Please fill in all fields.');
+      if (password.length < 8) return showRegAlert('Password must be at least 8 characters.');
+      if (password !== confirm) return showRegAlert('Passwords do not match.');
+
+      regBtn.disabled = true;
+      try {
+        await AuthAPI.register(name, email, password, role);
+        showRegAlert('Account created! Redirecting to sign in...', false);
+        setTimeout(() => { window.location.href = 'index.html'; }, 900);
+      } catch (err) {
+        showRegAlert(err.message);
+        regBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
