@@ -1,11 +1,184 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KiddoPath — Sign In</title>
+  <link href="css/style.css" rel="stylesheet" />
 </head>
-<body>
-    
+<body class="d-flex align-items-center py-4">
+
+  <main class="container">
+    <div class="row justify-content-center align-items-center">
+
+      <!-- Left Showcase Glass Panel -->
+      <div class="col-lg-6">
+        <div class="glass-card p-4 p-md-5">
+          <div class="d-flex align-items-center gap-3 mb-4">
+            <span class="brand-badge" style="width: 54px; height: 54px; border-radius: 16px;">
+              <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z"/></svg>
+            </span>
+            <div>
+              <h1 class="h3 mb-0 display-font">KiddoPath</h1>
+              <span class="badge-pastel badge-lavender mt-1">Sensory-Friendly Visual Routines</span>
+            </div>
+          </div>
+
+          <h2 class="display-6 mb-3">Calm, predictable days for every child.</h2>
+          <p class="text-secondary fs-6 mb-4">
+            Build picture-based daily schedules, visual countdown timers, and interactive talking boards designed for children with speech and developmental delays.
+          </p>
+
+          <div class="row">
+            <div class="col-sm-6">
+              <div class="glass-panel-subtle p-3 h-100 d-flex align-items-start gap-3">
+                <div class="pastel-icon-tile tile-sky">
+                  <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18M9 16l2 2 4-4"/></svg>
+                </div>
+                <div>
+                  <h3 class="h6 mb-1">Visual Schedules</h3>
+                  <p class="small text-secondary mb-0">Step-by-step routines with clear icons and calming pastel cues.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-sm-6">
+              <div class="glass-panel-subtle p-3 h-100 d-flex align-items-start gap-3">
+                <div class="pastel-icon-tile tile-mint">
+                  <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                </div>
+                <div>
+                  <h3 class="h6 mb-1">Visual Pie Timers</h3>
+                  <p class="small text-secondary mb-0">Gentle transitions that show time passing without stress.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-sm-6">
+              <div class="glass-panel-subtle p-3 h-100 d-flex align-items-start gap-3">
+                <div class="pastel-icon-tile tile-lavender">
+                  <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8z"/></svg>
+                </div>
+                <div>
+                  <h3 class="h6 mb-1">My Talking Board</h3>
+                  <p class="small text-secondary mb-0">Tap-to-speak AAC picture cards powered by Text-to-Speech.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-sm-6">
+              <div class="glass-panel-subtle p-3 h-100 d-flex align-items-start gap-3">
+                <div class="pastel-icon-tile tile-peach">
+                  <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 3 5-6"/></svg>
+                </div>
+                <div>
+                  <h3 class="h6 mb-1">Therapy Insights</h3>
+                  <p class="small text-secondary mb-0">Track task independence across caregivers, OTs, and teachers.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Login Glass Card -->
+      <div class="col-lg-5">
+        <div class="glass-card p-4 p-md-5">
+          <div class="text-center mb-4">
+            <span class="badge-pastel badge-sky mb-2">Welcome Back</span>
+            <h2 class="h3 mb-1">Sign In to Your Workspace</h2>
+            <p class="text-secondary small mb-0">Access your child profiles, schedules, and progress reports</p>
+          </div>
+
+          <div id="loginAlert" class="alert-box d-none" role="alert"></div>
+
+          <form id="loginForm" novalidate>
+            <div class="mb-3">
+              <label for="loginEmail" class="glass-label">Email Address</label>
+              <input type="email" id="loginEmail" class="glass-input" placeholder="you@example.com" required autocomplete="email" />
+            </div>
+
+            <div class="mb-3">
+              <label for="loginPassword" class="glass-label">Password</label>
+              <div class="position-relative">
+                <input type="password" id="loginPassword" class="glass-input pe-5" placeholder="Enter your password" required autocomplete="current-password" />
+                <button type="button" id="togglePasswordBtn" style="background:none;border:none;cursor:pointer;" class="text-secondary position-absolute top-50 end-0 translate-middle-y px-3" aria-label="Show or hide password">Show</button>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between mb-4">
+              <label class="d-flex align-items-center gap-2 small fw-semibold text-secondary" style="cursor:pointer;">
+                <input type="checkbox" id="rememberMe" checked />
+                <span>Remember me</span>
+              </label>
+              <span class="small text-muted">Caregiver &bull; OT &bull; SPED</span>
+            </div>
+
+            <button type="submit" id="loginSubmitBtn" class="btn-pastel btn-pastel-sky w-100 fs-6 mb-3">
+              <span>Sign In</span>
+            </button>
+          </form>
+
+          <div class="glass-panel-subtle p-3 text-center mt-3">
+            <span class="small text-secondary">New to KiddoPath?</span>
+            <a href="registration.html" class="fw-bold text-decoration-none ms-1" style="color: #3b82f6;">Create an Account &rarr;</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/script.js"></script>
+  <script>
+    redirectIfAuthenticated();
+
+    const loginForm = document.getElementById('loginForm');
+    const loginAlert = document.getElementById('loginAlert');
+    const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+    const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+    const passwordInput = document.getElementById('loginPassword');
+
+    togglePasswordBtn.addEventListener('click', () => {
+      const isHidden = passwordInput.type === 'password';
+      passwordInput.type = isHidden ? 'text' : 'password';
+      togglePasswordBtn.textContent = isHidden ? 'Hide' : 'Show';
+    });
+
+    function showLoginAlert(message, isError = true) {
+      loginAlert.className = `alert-box ${isError ? 'alert-error' : 'alert-success'}`;
+      loginAlert.textContent = message;
+      loginAlert.classList.remove('d-none');
+    }
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      loginAlert.classList.add('d-none');
+
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = passwordInput.value;
+      const remember = document.getElementById('rememberMe').checked;
+
+      if (!email || !password) {
+        showLoginAlert('Please enter both your email address and password.');
+        return;
+      }
+
+      loginSubmitBtn.disabled = true;
+      loginSubmitBtn.textContent = 'Signing in...';
+
+      try {
+        const res = await AuthAPI.login(email, password);
+        AuthAPI.saveUser(res.user, remember);
+        showLoginAlert(`Welcome back, ${res.user.name}! Redirecting...`, false);
+        setTimeout(() => { window.location.href = 'dashboard.html'; }, 650);
+      } catch (err) {
+        showLoginAlert(err.message || 'Invalid email or password.');
+        loginSubmitBtn.disabled = false;
+        loginSubmitBtn.textContent = 'Sign In';
+      }
+    });
+  </script>
 </body>
 </html>
