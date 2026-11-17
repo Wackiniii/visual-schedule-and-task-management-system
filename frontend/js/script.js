@@ -59,50 +59,70 @@ function renderGlassNavbar(activePage = '') {
   const userRole = user ? escapeHtml(user.role) : 'Caregiver';
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'fa-house-heart', href: 'dashboard.html' },
-    { id: 'schedule', label: 'Schedule Builder', icon: 'fa-calendar-plus', href: 'schedule-creator.html' },
-    { id: 'child', label: 'Child View', icon: 'fa-child-reaching', href: 'child-view.html' },
-    { id: 'progress', label: 'Progress', icon: 'fa-chart-pie', href: 'progress.html' },
-    { id: 'settings', label: 'Settings', icon: 'fa-sliders', href: 'settings.html' },
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      href: 'dashboard.html',
+      svg: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z"/></svg>',
+    },
+    {
+      id: 'schedule',
+      label: 'Schedule Builder',
+      href: 'schedule-creator.html',
+      svg: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/></svg>',
+    },
+    {
+      id: 'child',
+      label: 'Child View',
+      href: 'child-view.html',
+      svg: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a6.5 6.5 0 0 1 13 0"/></svg>',
+    },
+    {
+      id: 'progress',
+      label: 'Progress',
+      href: 'progress.html',
+      svg: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-4 4 3 5-6"/></svg>',
+    },
+    {
+      id: 'settings',
+      label: 'Settings',
+      href: 'settings.html',
+      svg: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+    },
   ];
 
   const linksHtml = navItems
     .map(
       (item) => `
       <a href="${item.href}" class="nav-pill-link ${activePage === item.id ? 'active' : ''}">
-        <i class="fa-solid ${item.icon}"></i>
+        ${item.svg}
         <span>${item.label}</span>
       </a>`
     )
     .join('');
 
   container.innerHTML = `
-    <nav class="glass-navbar py-2 px-3 px-lg-4">
-      <div class="container-fluid d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <nav class="glass-navbar" style="padding: 0.75rem 1.25rem;">
+      <div class="container d-flex flex-wrap align-items-center justify-content-between gap-2">
         <a href="dashboard.html" class="brand-logo">
-          <span class="brand-badge"><i class="fa-solid fa-sparkles"></i></span>
+          <span class="brand-badge">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z"/></svg>
+          </span>
           <span>KiddoPath</span>
         </a>
 
-        <button class="btn btn-pastel-glass d-lg-none px-3" type="button" data-bs-toggle="collapse" data-bs-target="#kiddoNavMenu" aria-expanded="false" aria-label="Toggle navigation">
-          <i class="fa-solid fa-bars"></i>
-        </button>
+        <div class="d-flex flex-wrap align-items-center gap-1">
+          ${linksHtml}
+        </div>
 
-        <div class="collapse navbar-collapse justify-content-between align-items-center mt-2 mt-lg-0" id="kiddoNavMenu">
-          <div class="d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center gap-1 gap-lg-2 mx-lg-auto my-2 my-lg-0">
-            ${linksHtml}
+        <div class="d-flex align-items-center gap-3">
+          <div class="text-end">
+            <div class="fw-bold small">${userName}</div>
+            <span class="badge-pastel badge-lavender" style="font-size: 0.72rem; padding: 0.18rem 0.6rem;">${userRole}</span>
           </div>
-
-          <div class="d-flex align-items-center justify-content-between justify-content-lg-end gap-2 pt-2 pt-lg-0 border-top border-lg-0">
-            <div class="text-end me-1">
-              <div class="fw-bold small lh-1">${userName}</div>
-              <span class="badge-pastel badge-lavender mt-1" style="font-size: 0.72rem; padding: 0.2rem 0.6rem;">${userRole}</span>
-            </div>
-            <button type="button" id="logoutBtn" class="btn-pastel btn-pastel-danger px-3" title="Log Out">
-              <i class="fa-solid fa-right-from-bracket"></i>
-              <span class="d-none d-sm-inline">Logout</span>
-            </button>
-          </div>
+          <button type="button" id="logoutBtn" class="btn-pastel btn-pastel-danger px-3" style="min-height: 42px; padding: 0.45rem 0.95rem;">
+            <span>Logout</span>
+          </button>
         </div>
       </div>
     </nav>
@@ -122,26 +142,17 @@ function showToast(message, type = 'sky') {
   if (!wrapper) {
     wrapper = document.createElement('div');
     wrapper.id = 'kiddoToastContainer';
-    wrapper.className = 'position-fixed bottom-0 end-0 p-3 d-flex flex-column gap-2';
-    wrapper.style.zIndex = '1090';
+    wrapper.style.cssText = 'position:fixed;bottom:1.25rem;right:1.25rem;z-index:2000;display:flex;flex-direction:column;gap:0.6rem;';
     document.body.appendChild(wrapper);
   }
 
-  const iconMap = {
-    sky: { icon: 'fa-circle-info', tile: 'tile-sky' },
-    mint: { icon: 'fa-circle-check', tile: 'tile-mint' },
-    peach: { icon: 'fa-bell', tile: 'tile-peach' },
-    rose: { icon: 'fa-circle-exclamation', tile: 'tile-rose' },
-  };
-  const cfg = iconMap[type] || iconMap.sky;
-
+  const tileMap = { sky: 'tile-sky', mint: 'tile-mint', peach: 'tile-peach', rose: 'tile-rose' };
   const toastEl = document.createElement('div');
   toastEl.className = 'toast-glass p-3 d-flex align-items-center gap-3';
-  toastEl.style.minWidth = '270px';
-  toastEl.style.maxWidth = '360px';
+  toastEl.style.cssText = 'min-width:260px;max-width:360px;';
   toastEl.innerHTML = `
-    <div class="pastel-icon-tile ${cfg.tile}" style="width: 42px; height: 42px; font-size: 1.15rem; border-radius: 13px;">
-      <i class="fa-solid ${cfg.icon}"></i>
+    <div class="pastel-icon-tile ${tileMap[type] || 'tile-sky'}" style="width:38px;height:38px;border-radius:12px;font-size:1rem;">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
     </div>
     <div class="fw-semibold small flex-grow-1">${escapeHtml(message)}</div>
   `;
@@ -152,7 +163,7 @@ function showToast(message, type = 'sky') {
     toastEl.style.transform = 'translateY(8px)';
     toastEl.style.transition = 'all 0.25s ease';
     setTimeout(() => toastEl.remove(), 260);
-  }, 3200);
+  }, 3000);
 }
 
 function speakText(text) {
@@ -187,7 +198,7 @@ function playSuccessChime() {
       osc.stop(ctx.currentTime + idx * 0.11 + 0.36);
     });
   } catch {
-    // Audio playback blocked before interaction
+    // Ignore audio block
   }
 }
 
