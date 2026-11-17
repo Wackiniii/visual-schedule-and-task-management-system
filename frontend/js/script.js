@@ -198,7 +198,6 @@ function playSuccessChime() {
       osc.stop(ctx.currentTime + idx * 0.11 + 0.36);
     });
   } catch {
-    // Ignore audio block
   }
 }
 
