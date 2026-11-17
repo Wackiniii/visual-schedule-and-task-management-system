@@ -21,7 +21,7 @@ Members:
 
 ### Prerequisite
 - XAMPP Control Panel
-- VS Code
+- Visual Studio Code
 
 ### 0. Cloning Repository
 1. Copy our Repo `https://github.com/Wackiniii/visual-schedule-and-task-management-system.git`
