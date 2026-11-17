@@ -25,15 +25,33 @@ Members:
 
 ### 0. Cloning Repository
 1. Copy our Repo `https://github.com/Wackiniii/visual-schedule-and-task-management-system.git`
+
+
+https://github.com/user-attachments/assets/0e961fc5-657e-4304-a288-982fbf746c8e
+
+
 2. Open **Visual Studio Code**
 3. Click **Source Control icon** on the left side (or press `Ctrl + Shift + G`)
 4. CLick Clone Repository and paste the repo link of the project then select the destination folder on your PC
 
+
+https://github.com/user-attachments/assets/5afb8776-54a4-45d4-b78f-4ea8930ecaf4
+
+
 ### 1. Setting up Database
 1. Open **XAMPP control panel** then start both Apache and MySQL
 2. Click Admin button next to MySQL module that will redirect you to phpmyadmin `http://localhost/phpmyadmin`
+
+
+https://github.com/user-attachments/assets/cf0dc450-b4fc-4cb0-812b-fc45e13a3895
+
+
 3. Click SQL tab on top of the page
 4. Copy the schema from `database/schema.sql`, paste it into the SQL query box then click Go (or import the file `schema.sql`)
+
+
+https://github.com/user-attachments/assets/6226b5ff-849d-4692-be0b-235727e958a2
+
 
 ### 2. Setting up PHP built-in server for backend and frontend
 1. Open terminal via View > Terminal (or press `` Ctrl + ` ``)
@@ -52,6 +70,10 @@ Members:
 ```
 - click + icon and copy the following above
 - Leave this terminal running. It should result to `PHP Development Server (http://localhost:3000) started`
+
+
+https://github.com/user-attachments/assets/014c4e82-f4b9-4fd2-b891-87f060669e0a
+
 
 ### 3. Opening the application
 - Copy and paste the link in the browser `http://localhost:3000/`
