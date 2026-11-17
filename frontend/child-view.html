@@ -372,3 +372,197 @@
       const task = currentTasks[selectedTaskIndex];
       if (task) speakText(task.name);
     });
+        document.getElementById('completeCurrentTaskBtn').addEventListener('click', async () => {
+      const task = currentTasks[selectedTaskIndex];
+      if (!task || task.status === 'completed') return;
+
+      const btn = document.getElementById('completeCurrentTaskBtn');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      try {
+        await TasksAPI.update(task.id, { user_id: currentUser.id, status: 'completed' });
+        task.status = 'completed';
+        playSuccessChime();
+        speakText(`Great job completing ${task.name}!`);
+        showToast(`Completed: ${task.name}`, 'mint');
+
+        const nextPendingIdx = currentTasks.findIndex((t) => t.status !== 'completed');
+        selectTask(nextPendingIdx !== -1 ? nextPendingIdx : selectedTaskIndex);
+      } catch (err) {
+        showToast(err.message || 'Could not update task.', 'rose');
+        btn.disabled = false;
+        btn.textContent = "I'm All Done!";
+      }
+    });
+    function renderTaskList() {
+      const container = document.getElementById('childTaskList');
+      const doneCount = currentTasks.filter((t) => t.status === 'completed').length;
+      document.getElementById('routineProgressBadge').textContent = `${doneCount} / ${currentTasks.length} Done`;
+
+      if (currentTasks.length === 0) {
+        container.innerHTML = `
+          <div class="glass-panel-subtle p-4 text-center">
+            <p class="text-secondary mb-3">No visual tasks scheduled for this date yet.</p>
+            <a href="schedule-creator.html?child_id=${childSelector.value}" class="btn-pastel btn-pastel-sky" style="min-height:42px;padding:0.45rem 1rem;">Open Schedule Builder</a>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = currentTasks
+        .map((task, idx) => {
+          const isDone = task.status === 'completed';
+          const isSelected = idx === selectedTaskIndex;
+          return `
+            <div class="timeline-task-card ${isDone ? 'is-completed' : ''} ${isSelected ? 'selected-task' : ''} d-flex align-items-center justify-content-between gap-3" style="cursor:pointer;" onclick="selectTask(${idx})">
+              <div class="d-flex align-items-center gap-3">
+                <div class="pastel-icon-tile ${isDone ? 'tile-mint' : 'tile-peach'}" style="font-size:1.55rem;">
+                  ${getTaskEmoji(task.icon)}
+                </div>
+                <div>
+                  <div class="fw-bold ${isDone ? 'text-decoration-line-through text-muted' : ''}">${escapeHtml(task.name)}</div>
+                  <div class="small text-secondary">${formatTime12h(task.time)} &bull; ${task.duration || 10} min</div>
+                </div>
+              </div>
+              <span class="badge-pastel ${isDone ? 'badge-mint' : 'badge-peach'}">
+                ${isDone ? 'Done' : 'Pending'}
+              </span>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    async function loadChildSchedule() {
+      const childId = childSelector.value;
+      const date = scheduleDateInput.value;
+      if (!childId) return;
+
+      try {
+        const schedules = await SchedulesAPI.getByChild(currentUser.id, childId, date);
+        if (schedules.length > 0) {
+          currentTasks = await TasksAPI.getBySchedule(currentUser.id, schedules[0].id);
+        } else {
+          currentTasks = [];
+        }
+        const firstPending = currentTasks.findIndex((t) => t.status !== 'completed');
+        selectTask(firstPending !== -1 ? firstPending : 0);
+      } catch (err) {
+        showToast(err.message || 'Error loading schedule.', 'rose');
+      }
+    }
+
+    const AAC_STORAGE_KEY = 'kiddopath_aac_cards';
+    const DEFAULT_AAC_CARDS = [
+      { label: 'Water', emoji: '💧', category: 'Needs' },
+      { label: 'Eat / Hungry', emoji: '🍎', category: 'Needs' },
+      { label: 'Bathroom', emoji: '🚽', category: 'Needs' },
+      { label: 'Help Please', emoji: '🙋', category: 'Needs' },
+      { label: 'Break / Rest', emoji: '🛋️', category: 'Needs' },
+      { label: 'Happy', emoji: '😊', category: 'Feelings' },
+      { label: 'Tired', emoji: '😴', category: 'Feelings' },
+      { label: 'Sad / Upset', emoji: '😢', category: 'Feelings' },
+      { label: 'Overwhelmed', emoji: '🎧', category: 'Feelings' },
+      { label: 'Play', emoji: '🧩', category: 'Activities' },
+      { label: 'Read Book', emoji: '📖', category: 'Activities' },
+      { label: 'Music', emoji: '🎵', category: 'Activities' },
+      { label: 'All Done', emoji: '✅', category: 'Activities' },
+      { label: 'Mom', emoji: '👩', category: 'People' },
+      { label: 'Dad', emoji: '👨', category: 'People' },
+      { label: 'Teacher', emoji: '🧑‍🏫', category: 'People' },
+    ];
+
+    let activeAacCategory = 'All';
+
+    function getAacCards() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(AAC_STORAGE_KEY) || 'null');
+        return Array.isArray(saved) && saved.length > 0 ? saved : DEFAULT_AAC_CARDS;
+      } catch {
+        return DEFAULT_AAC_CARDS;
+      }
+    }
+
+    function renderAacCards() {
+      const grid = document.getElementById('aacCardsGrid');
+      const cards = getAacCards().filter(
+        (c) => activeAacCategory === 'All' || c.category === activeAacCategory
+      );
+
+      grid.innerHTML = cards
+        .map(
+          (card) => `
+          <div class="col-6 col-sm-4 col-md-3">
+            <div class="aac-card" onclick="handleAacSpeak(this, '${escapeHtml(card.label)}')">
+              <div style="font-size: 2.6rem; line-height: 1;">${escapeHtml(card.emoji)}</div>
+              <div class="fw-bold display-font" style="font-size: 1.05rem;">${escapeHtml(card.label)}</div>
+              <span class="badge-pastel badge-lavender" style="font-size: 0.7rem; padding: 0.2rem 0.6rem;">${escapeHtml(card.category)}</span>
+            </div>
+          </div>
+        `
+        )
+        .join('');
+    }
+
+    function handleAacSpeak(el, text) {
+      el.classList.add('speaking');
+      speakText(text);
+      setTimeout(() => el.classList.remove('speaking'), 450);
+    }
+
+    document.querySelectorAll('.cat-pill-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.cat-pill-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeAacCategory = btn.getAttribute('data-cat');
+        renderAacCards();
+      });
+    });
+
+    const aacModalBackdrop = document.getElementById('aacModalBackdrop');
+    document.getElementById('openAddAacBtn').addEventListener('click', () => aacModalBackdrop.classList.add('open'));
+    document.getElementById('closeAacModalBtn').addEventListener('click', () => aacModalBackdrop.classList.remove('open'));
+    document.getElementById('cancelAacModalBtn').addEventListener('click', () => aacModalBackdrop.classList.remove('open'));
+
+    document.getElementById('aacCardForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const label = document.getElementById('aacLabelInput').value.trim();
+      const emoji = document.getElementById('aacEmojiInput').value.trim() || '💬';
+      const category = document.getElementById('aacCategoryInput').value;
+      if (!label) return;
+
+      const updated = [...getAacCards(), { label, emoji, category }];
+      localStorage.setItem(AAC_STORAGE_KEY, JSON.stringify(updated));
+      document.getElementById('aacCardForm').reset();
+      document.getElementById('aacEmojiInput').value = '💬';
+      aacModalBackdrop.classList.remove('open');
+      renderAacCards();
+      showToast(`Added "${label}" to Talking Board!`, 'mint');
+    });
+
+    async function initChildView() {
+      if (!currentUser) return;
+      renderAacCards();
+      const children = await ChildrenAPI.getAll(currentUser.id);
+      if (children.length === 0) {
+        childSelector.innerHTML = '<option value="">No children found</option>';
+        return;
+      }
+      childSelector.innerHTML = children
+        .map((c) => `<option value="${c.id}">${escapeHtml(c.name)} (Age ${c.age})</option>`)
+        .join('');
+
+      if (preselectedChildId && children.some((c) => String(c.id) === preselectedChildId)) {
+        childSelector.value = preselectedChildId;
+      }
+      loadChildSchedule();
+    }
+
+    childSelector.addEventListener('change', loadChildSchedule);
+    scheduleDateInput.addEventListener('change', loadChildSchedule);
+
+    initChildView();
+  </script>
+</body>
+</html>
