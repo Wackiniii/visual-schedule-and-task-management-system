@@ -24,7 +24,7 @@ Members:
 - Visual Studio Code
 
 ### 0. Cloning Repository
-1. Copy our Repo `https://github.com/Wackiniii/visual-schedule-and-task-management-system.git`
+1. Copy our Repo link `https://github.com/Wackiniii/visual-schedule-and-task-management-system.git`
 
 
 https://github.com/user-attachments/assets/206688a1-4528-4650-b1d2-8099bde622c1
