@@ -27,7 +27,7 @@ Members:
 1. Copy our Repo `https://github.com/Wackiniii/visual-schedule-and-task-management-system.git`
 
 
-https://github.com/user-attachments/assets/0e961fc5-657e-4304-a288-982fbf746c8e
+https://github.com/user-attachments/assets/206688a1-4528-4650-b1d2-8099bde622c1
 
 
 2. Open **Visual Studio Code**
