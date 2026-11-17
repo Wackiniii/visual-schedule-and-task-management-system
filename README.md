@@ -50,7 +50,7 @@ https://github.com/user-attachments/assets/cf0dc450-b4fc-4cb0-812b-fc45e13a3895
 4. Copy the schema from `database/schema.sql`, paste it into the SQL query box then click Go (or import the file `schema.sql`)
 
 
-https://github.com/user-attachments/assets/6226b5ff-849d-4692-be0b-235727e958a2
+https://github.com/user-attachments/assets/83659c17-5625-4239-82b0-56106d01148d
 
 
 ### 2. Setting up PHP built-in server for backend and frontend
