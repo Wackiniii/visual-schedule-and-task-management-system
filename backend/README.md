@@ -10,22 +10,22 @@
 1. Open **XAMPP control panel** then start both Apache and MySQL
 2. Click Admin button next to MySQL module that will redirect you to phpmyadmin `http://localhost/phpmyadmin`
 3. Click SQL tab on top of the page
-4. Copy the schema from `database/schema.sql`, paste it into the SQL query box then click Go
+4. Copy the schema from `database/schema.sql`, paste it into the SQL query box then click Go (or import the file `schema.sql`)
 
 # 2. Setting up PHP built-in server for backend and frontend
 1. Open terminal via View > Terminal (or press `` Ctrl + ` ``)
-2. Terminal 1 (Backend API)
+2. Terminal 1  (cmd) (Backend API)
 ```bash
    cd backend
-   php -S localhost:5000
+   C:\xampp\php\php.exe -S localhost:5000
 ```
 - copy the following above
 - Leave the terminal running. It should result to `PHP Development Server (http://localhost:5000) started`
 
-3. Terminal 2 (Frontend API)
+3. Terminal 2 (cmd) (Frontend API)
 ```bash
     cd frontend
-    php -S localhost:3000
+    C:\xampp\php\php.exe -S localhost:3000
 ```
 - click + icon and copy the following above
 - Leave this terminal running. It should result to `PHP Development Server (http://localhost:3000) started`
