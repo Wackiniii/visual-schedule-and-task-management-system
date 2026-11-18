@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KiddoPath — Schedule Builder</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link href="css/style.css" rel="stylesheet" />
+</head>
+<body>
+  <div id="appNavbar"></div>
+  <main class="container page-main">
+    <div class="page-header"><div><h1 class="h3 mb-1">Schedule Builder</h1>
+      <p class="text-secondary small mb-0">Pick a child and date, then add, edit or delete tasks. Everything is saved to the database.</p></div></div>
+
+    <div class="glass-card p-4 mb-4">
+      <div class="row">
+        <div class="col-md-6"><label class="glass-label" for="childSelect">Child</label><select id="childSelect" class="glass-select"></select></div>
+        <div class="col-md-6"><label class="glass-label" for="dateInput">Date</label><input type="date" id="dateInput" class="glass-input" /></div>
+      </div>
+      <div class="small text-secondary mt-2">Saved schedules for this child:</div>
+      <div id="dateChips" class="d-flex flex-wrap gap-2 mt-1"></div>
+    </div>
+
+    <div class="row">
+      <div class="col-lg-4"><div class="glass-card p-4 h-100">
+        <h2 class="h6 mb-3">Activity Bank</h2>
+        <div id="activityBank" class="activity-grid mb-4"></div>
+        <label class="glass-label" for="customName">Custom activity</label>
+        <div class="d-flex gap-2">
+          <input id="customName" class="glass-input" maxlength="150" placeholder="e.g. Feed the fish" />
+          <button type="button" id="customAddBtn" class="btn-pastel btn-pastel-lavender px-3" aria-label="Add custom activity"><i class="fa-solid fa-plus"></i></button>
+        </div>
+      </div></div>
+
+      <div class="col-lg-8">
+        <div class="glass-card p-4 mb-4">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <h2 class="h6 mb-0">Saved Schedule <span id="savedBadge" class="badge-pastel badge-lavender ms-1">none</span></h2>
+            <button type="button" id="deleteScheduleBtn" class="btn-pastel btn-pastel-danger d-none"><i class="fa-solid fa-trash"></i> Delete schedule</button>
+          </div>
+          <div id="savedList"></div>
+          <div id="savedEmpty" class="empty-state">No saved tasks for this child on this date yet.</div>
+        </div>
+
+        <div class="glass-card p-4">
+          <h2 class="h6 mb-3">New Tasks</h2>
+          <div id="dropzone" class="schedule-dropzone" style="min-height:160px">
+            <div id="dropHint" class="empty-state">Drag or tap activities to add them here</div>
+            <div id="draftList"></div>
+          </div>
+          <div class="d-flex justify-content-between flex-wrap gap-2 mt-3">
+            <button type="button" id="clearBtn" class="btn-pastel btn-pastel-glass">Clear</button>
+            <button type="button" id="saveBtn" class="btn-pastel btn-pastel-mint"><i class="fa-solid fa-floppy-disk"></i> Save new tasks</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/api-endpoints.js"></script>
+  <script src="js/script.js"></script>
+  <script>
+    const user = initPage('schedule');
+    const ACTIVITIES = [['Wake up', 'sun'], ['Brush teeth', 'tooth'], ['Get dressed', 'shirt'], ['Eat breakfast', 'utensils'], ['Study time', 'book'],
+      ['Play time', 'puzzle-piece'], ['Snack', 'apple-whole'], ['Bath time', 'bath'], ['Bedtime', 'bed']].map(([name, i]) => ({ name, icon: 'fa-' + i }));
+    let schedules = [], schedule = null, saved = [], draft = [];
+    const numOrNull = (v) => v === '' || v == null ? null : Number(v);
+    const err = (e) => showToast(e.message, 'rose');
+    const rowInputs = (t) => `<input type="time" class="glass-input" data-field="time" value="${escapeHtml(t.time || '')}" aria-label="Start time" />
+      <input type="number" min="0" class="glass-input" data-field="duration" value="${escapeHtml(t.duration ?? '')}" placeholder="min" aria-label="Duration in minutes" style="max-width:90px" />`;
+
+    $('dateInput').value = getTodayISO();
+    $('activityBank').innerHTML = ACTIVITIES.map((a, i) => `<div class="activity-bank-item" draggable="true" data-idx="${i}" tabindex="0">
+      <i class="fa-solid ${a.icon} fa-lg mb-1"></i><div class="small fw-semibold">${a.name}</div></div>`).join('');
+
+    // READ schedule + tasks for the selected child and date
+    async function loadSchedule() {
+      const childId = $('childSelect').value;
+      schedules = []; schedule = null; saved = [];
+      try {
+        if (childId) {
+          schedules = await SchedulesAPI.list(user.id, childId);
+          schedule = schedules.find(s => s.date === $('dateInput').value) || null;
+          if (schedule) saved = (await TasksAPI.list(user.id, schedule.id)).sort((a, b) => (a.time || '99').localeCompare(b.time || '99') || a.id - b.id);
+        }
+      } catch (e) { err(e); }
+      $('dateChips').innerHTML = schedules.map(s => `<button type="button" class="badge-pastel ${s === schedule ? 'badge-sky' : 'badge-lavender'}" style="cursor:pointer" data-date="${s.date}">${s.date}</button>`).join('') || '<span class="small text-muted">None yet</span>';
+      $('savedBadge').textContent = schedule ? `#${schedule.id} • ${schedule.date}` : 'none';
+      $('deleteScheduleBtn').classList.toggle('d-none', !schedule);
+      $('savedEmpty').classList.toggle('d-none', saved.length > 0);
+      $('savedList').innerHTML = saved.map(t => `<div class="timeline-task-card draft-row ${t.status === 'completed' ? 'is-completed' : ''}" data-id="${t.id}">
+        <i class="fa-solid ${escapeHtml(t.icon || 'fa-tasks')}"></i>
+        <input class="glass-input flex-grow-1" data-field="name" value="${escapeHtml(t.name)}" maxlength="150" aria-label="Task name" />
+        ${rowInputs(t)}
+        <label class="small fw-semibold d-flex align-items-center gap-1"><input type="checkbox" data-field="done" ${t.status === 'completed' ? 'checked' : ''} /> Done</label>
+        <button type="button" class="btn-pastel btn-pastel-sky px-3" data-save aria-label="Save task"><i class="fa-solid fa-floppy-disk"></i></button>
+        <button type="button" class="btn-pastel btn-pastel-danger px-3" data-delete aria-label="Delete task"><i class="fa-solid fa-trash"></i></button></div>`).join('');
+    }
+
+    // UPDATE / DELETE a saved task
+    $('savedList').addEventListener('click', async (e) => {
+      const row = e.target.closest('[data-id]'), task = row && saved.find(t => String(t.id) === row.dataset.id);
+      const field = (f) => row.querySelector(`[data-field="${f}"]`);
+      try {
+        if (e.target.closest('[data-save]')) {
+          if (!field('name').value.trim()) return showToast('Task name cannot be empty.', 'peach');
+          await TasksAPI.update(task.id, { user_id: user.id, schedule_id: task.schedule_id, name: field('name').value.trim(), icon: task.icon,
+            time: field('time').value || null, duration: numOrNull(field('duration').value), status: field('done').checked ? 'completed' : 'pending' });
+          showToast('Task updated.', 'mint');
+        } else if (e.target.closest('[data-delete]') && confirm('Delete this task?')) {
+          await TasksAPI.remove(task.id, user.id); showToast('Task deleted.', 'peach');
+        } else return;
+        loadSchedule();
+      } catch (e2) { err(e2); }
+    });
+
+    // DELETE schedule (tasks go with it via ON DELETE CASCADE)
+    $('deleteScheduleBtn').onclick = async () => {
+      if (!confirm('Delete this schedule and all of its tasks?')) return;
+      try { await SchedulesAPI.remove(schedule.id, user.id); showToast('Schedule deleted.', 'peach'); loadSchedule(); } catch (e) { err(e); }
+    };
+
+    // Draft (new) tasks: drag/drop or tap
+    function renderDraft() {
+      $('dropHint').classList.toggle('d-none', draft.length > 0);
+      $('draftList').innerHTML = draft.map((t, i) => `<div class="timeline-task-card draft-row" data-i="${i}">
+        <i class="fa-solid ${escapeHtml(t.icon)}"></i><span class="fw-bold flex-grow-1">${escapeHtml(t.name)}</span>
+        ${rowInputs(t)}
+        <button type="button" class="btn-pastel btn-pastel-danger px-3" data-remove="${i}" aria-label="Remove"><i class="fa-solid fa-xmark"></i></button></div>`).join('');
+    }
+    const addActivity = (a) => { draft.push({ name: a.name, icon: a.icon, time: '', duration: '' }); renderDraft(); };
+    $('activityBank').addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', e.target.closest('.activity-bank-item')?.dataset.idx));
+    $('activityBank').addEventListener('click', (e) => { const el = e.target.closest('.activity-bank-item'); if (el) addActivity(ACTIVITIES[el.dataset.idx]); });
+    $('dropzone').addEventListener('dragover', (e) => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); });
+    $('dropzone').addEventListener('dragleave', (e) => e.currentTarget.classList.remove('drag-over'));
+    $('dropzone').addEventListener('drop', (e) => {
+      e.preventDefault(); e.currentTarget.classList.remove('drag-over');
+      const a = ACTIVITIES[e.dataTransfer.getData('text/plain')]; if (a) addActivity(a);
+    });
+    $('customAddBtn').onclick = () => {
+      const name = $('customName').value.trim();
+      if (name) { addActivity({ name, icon: 'fa-tasks' }); $('customName').value = ''; }
+    };
+    $('draftList').addEventListener('input', (e) => { const row = e.target.closest('[data-i]'); if (row) draft[row.dataset.i][e.target.dataset.field] = e.target.value; });
+    $('draftList').addEventListener('click', (e) => { const rm = e.target.closest('[data-remove]'); if (rm) { draft.splice(rm.dataset.remove, 1); renderDraft(); } });
+    $('clearBtn').onclick = () => { draft = []; renderDraft(); };
+
+    // CREATE the schedule (if missing) and the new tasks
+    $('saveBtn').onclick = async () => {
+      const childId = $('childSelect').value, date = $('dateInput').value;
+      if (!childId || !date || !draft.length) return showToast('Choose a child, a date, and add at least one activity.', 'peach');
+      $('saveBtn').disabled = true;
+      try {
+        const target = schedule || await SchedulesAPI.create({ user_id: user.id, child_id: Number(childId), date });
+        for (const t of draft) await TasksAPI.create({ user_id: user.id, schedule_id: target.id, name: t.name, icon: t.icon, time: t.time || null, duration: numOrNull(t.duration) });
+        showToast('Saved to the database!', 'mint'); playSuccessChime();
+        draft = []; renderDraft(); loadSchedule();
+      } catch (e) { err(e); }
+      $('saveBtn').disabled = false;
+    };
+
+    $('childSelect').onchange = $('dateInput').onchange = loadSchedule;
+    $('dateChips').addEventListener('click', (e) => { const c = e.target.closest('[data-date]'); if (c) { $('dateInput').value = c.dataset.date; loadSchedule(); } });
+
+    (async () => {
+      try {
+        const children = await ChildrenAPI.list(user.id);
+        fillSelect($('childSelect'), children, children.length ? '' : 'Add a child on the dashboard first');
+        const wanted = new URLSearchParams(location.search).get('child_id');
+        if (wanted) $('childSelect').value = wanted;
+      } catch (e) { err(e); }
+      renderDraft(); loadSchedule();
+    })();
+  </script>
+</body>
+</html>

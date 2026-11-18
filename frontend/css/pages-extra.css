@@ -1,0 +1,24 @@
+/* ADDED: utilities/components the new pages need (style.css untouched). Loaded after style.css */
+.collapse { display: none; } .collapse.show { display: block; }
+.d-lg-none { display: inline-flex; } .d-sm-inline { display: none; }
+.navbar-collapse { flex-basis: 100%; flex-grow: 1; }
+@media (min-width: 576px) { .d-sm-inline { display: inline !important; } }
+@media (min-width: 992px) {
+  .collapse.navbar-collapse { display: flex !important; } .navbar-collapse { flex-basis: auto; }
+  .d-lg-none { display: none !important; } .flex-lg-row { flex-direction: row !important; }
+}
+.page-main { padding-top: 1.5rem; padding-bottom: 3rem; }
+.page-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+.stat-tile { display: flex; align-items: center; gap: 1rem; padding: 1.1rem 1.25rem; }
+.stat-value { font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; line-height: 1; }
+.empty-state { text-align: center; padding: 2rem 1rem; color: var(--text-muted); }
+.modal-overlay { position: fixed; inset: 0; z-index: 1080; display: none; align-items: center; justify-content: center; padding: 1rem; background: rgba(30,41,59,.35); backdrop-filter: blur(4px); }
+.modal-overlay.show { display: flex; }
+.modal-overlay .modal-content { width: 100%; max-width: 520px; padding: 1.5rem; }
+.progress-track { height: 12px; border-radius: 99px; background: #e6eef8; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--pastel-mint), var(--pastel-sky)); }
+.setting-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .9rem 0; border-bottom: 1px solid var(--glass-border-subtle); }
+.setting-row:last-child { border-bottom: 0; }
+.activity-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: .75rem; }
+.draft-row { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-bottom: .75rem; }
+.draft-row .glass-input { width: auto; min-width: 110px; }

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KiddoPath — Progress</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link href="css/style.css" rel="stylesheet" />
+</head>
+<body>
+  <div id="appNavbar"></div>
+  <main class="container page-main">
+    <div class="page-header">
+      <div><h1 class="h3 mb-1">Progress</h1><p class="text-secondary small mb-0">Task completion across schedules.</p></div>
+      <select id="childSelect" class="glass-select" style="max-width:240px" aria-label="Filter by child"></select>
+    </div>
+    <div class="row mb-3">
+      <div class="col-sm-4"><div class="glass-card stat-tile"><div class="pastel-icon-tile tile-lavender"><i class="fa-solid fa-calendar-days"></i></div><div><div class="stat-value" id="pSchedules">0</div><div class="small text-secondary">Schedules</div></div></div></div>
+      <div class="col-sm-4"><div class="glass-card stat-tile"><div class="pastel-icon-tile tile-mint"><i class="fa-solid fa-circle-check"></i></div><div><div class="stat-value" id="pDone">0</div><div class="small text-secondary">Tasks completed</div></div></div></div>
+      <div class="col-sm-4"><div class="glass-card stat-tile"><div class="pastel-icon-tile tile-sky"><i class="fa-solid fa-percent"></i></div><div><div class="stat-value" id="pRate">0%</div><div class="small text-secondary">Completion rate</div></div></div></div>
+    </div>
+    <div class="glass-card p-4"><h2 class="h6 mb-3">Daily Completion</h2><div id="dayList" class="d-flex flex-column gap-3"></div></div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/api-endpoints.js"></script>
+  <script src="js/script.js"></script>
+  <script>
+    const user = initPage('progress');
+    const pct = (done, all) => all ? Math.round(done / all * 100) : 0;
+
+    async function loadProgress() {
+      try {
+        const schedules = await SchedulesAPI.list(user.id, $('childSelect').value);
+        const tasks = (await TasksAPI.list(user.id)).filter(t => schedules.some(s => s.id === t.schedule_id));
+        const done = tasks.filter(t => t.status === 'completed').length;
+        $('pSchedules').textContent = schedules.length;
+        $('pDone').textContent = done;
+        $('pRate').textContent = pct(done, tasks.length) + '%';
+        $('dayList').innerHTML = schedules.slice().reverse().map(s => {
+          const mine = tasks.filter(t => t.schedule_id === s.id), d = mine.filter(t => t.status === 'completed').length;
+          return `<div><div class="d-flex justify-content-between small fw-semibold mb-1"><span>${escapeHtml(s.date)}</span><span>${d}/${mine.length} tasks (${pct(d, mine.length)}%)</span></div>
+            <div class="progress-track"><div class="progress-fill" style="width:${pct(d, mine.length)}%"></div></div></div>`;
+        }).join('') || '<div class="empty-state">No schedules yet.</div>';
+      } catch (e) { showToast(e.message, 'rose'); }
+    }
+
+    $('childSelect').onchange = loadProgress;
+    ChildrenAPI.list(user.id).then(c => fillSelect($('childSelect'), c, 'All children')).catch(e => showToast(e.message, 'rose')).finally(loadProgress);
+  </script>
+</body>
+</html>
