@@ -41,3 +41,13 @@ CREATE TABLE tasks (
     completed_at DATETIME NULL,
     FOREIGN KEY (schedule_id) REFERENCES schedules(id) ON DELETE CASCADE
 );
+
+-- Reusable task sets (existing databases: run just this statement)
+CREATE TABLE IF NOT EXISTS task_sets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    tasks TEXT NOT NULL COMMENT 'JSON list of {name, icon, time, duration}',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);

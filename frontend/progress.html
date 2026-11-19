@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KiddoPath — Progress</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link href="css/style.css" rel="stylesheet" />
+</head>
+<body>
+  <div id="appNavbar"></div>
+  <main class="container page-main">
+    <div class="page-header">
+      <div><h1 class="h3 mb-1">Progress</h1><p class="text-secondary small mb-0">Today's schedule at a glance.</p></div>
+      <select id="childSelect" class="glass-select" style="max-width:240px" aria-label="Choose child"></select>
+    </div>
+
+    <div id="noChild" class="glass-card empty-state d-none">Create a child first. <a href="dashboard.html" class="fw-bold">Go to the dashboard</a></div>
+
+    <div id="content" class="d-none">
+      <div id="noSchedule" class="glass-card empty-state d-none">No schedule for this child.</div>
+      <div id="kpi" class="row mb-3">
+        <div class="col-sm-4"><div class="glass-card stat-tile"><div class="pastel-icon-tile tile-lavender"><i class="fa-solid fa-list-check"></i></div><div><div class="stat-value" id="pTotal">0</div><div class="small text-secondary">Tasks today</div></div></div></div>
+        <div class="col-sm-4"><div class="glass-card stat-tile"><div class="pastel-icon-tile tile-mint"><i class="fa-solid fa-circle-check"></i></div><div><div class="stat-value" id="pDone">0</div><div class="small text-secondary">Completed</div></div></div></div>
+        <div class="col-sm-4"><div class="glass-card stat-tile"><div class="pastel-icon-tile tile-sky"><i class="fa-solid fa-percent"></i></div><div><div class="stat-value" id="pRate">0%</div><div class="small text-secondary">Completion rate</div></div></div></div>
+      </div>
+
+      <button type="button" id="weekBtn" class="btn-pastel btn-pastel-glass w-100" aria-expanded="false"><i class="fa-solid fa-chevron-down"></i> Last 7 days activity</button>
+      <div id="weekPanel" class="glass-card p-4 mt-3 d-none"><div id="dayList" class="d-flex flex-column gap-3"></div></div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/api-endpoints.js"></script>
+  <script src="js/script.js"></script>
+  <script>
+    const user = initPage('progress');
+    const pct = (done, all) => all ? Math.round(done / all * 100) : 0;
+    const isoDaysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+
+    async function loadProgress() {
+      const childId = $('childSelect').value;
+      $('noChild').classList.toggle('d-none', !!childId);
+      $('content').classList.toggle('d-none', !childId);
+      if (!childId) return;
+      try {
+        const schedules = await SchedulesAPI.list(user.id, childId);
+        const tasks = (await TasksAPI.list(user.id)).filter(t => schedules.some(s => s.id === t.schedule_id));
+        // [done, total] for a date, or null when that day has no schedule
+        const day = (date) => {
+          const s = schedules.find(x => x.date === date), mine = s ? tasks.filter(t => t.schedule_id === s.id) : null;
+          return mine && [mine.filter(t => t.status === 'completed').length, mine.length];
+        };
+        const today = day(getTodayISO());
+        $('noSchedule').classList.toggle('d-none', !!today);
+        $('kpi').classList.toggle('d-none', !today);
+        if (today) { $('pDone').textContent = today[0]; $('pTotal').textContent = today[1]; $('pRate').textContent = pct(...today) + '%'; }
+        $('dayList').innerHTML = [6, 5, 4, 3, 2, 1, 0].map(n => {
+          const date = isoDaysAgo(n), d = day(date);
+          return `<div><div class="d-flex justify-content-between small fw-semibold mb-1"><span>${date}</span>
+            <span>${d ? `${d[0]}/${d[1]} tasks (${pct(...d)}%)` : 'No schedule'}</span></div>
+            <div class="progress-track"><div class="progress-fill" style="width:${d ? pct(...d) : 0}%"></div></div></div>`;
+        }).join('');
+      } catch (e) { showToast(e.message, 'rose'); }
+    }
+
+    $('weekBtn').onclick = () => {
+      const open = $('weekPanel').classList.toggle('d-none') === false;
+      $('weekBtn').setAttribute('aria-expanded', open);
+      $('weekBtn').firstElementChild.className = `fa-solid fa-chevron-${open ? 'up' : 'down'}`;
+    };
+    $('childSelect').onchange = loadProgress;
+    ChildrenAPI.list(user.id).then(c => fillSelect($('childSelect'), c)).catch(e => showToast(e.message, 'rose')).finally(loadProgress);
+  </script>
+</body>
+</html>
