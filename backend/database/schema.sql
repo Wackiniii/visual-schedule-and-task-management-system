@@ -44,7 +44,7 @@ CREATE TABLE tasks (
     FOREIGN KEY (schedule_id) REFERENCES schedules(id) ON DELETE CASCADE
 );
 
--- Reusable task sets (existing databases: run just this statement)
+-- Reusable task sets
 CREATE TABLE IF NOT EXISTS task_sets (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -54,5 +54,5 @@ CREATE TABLE IF NOT EXISTS task_sets (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Login lockout (existing databases: run just this statement)
--- ALTER TABLE users ADD COLUMN failed_attempts INT NOT NULL DEFAULT 0, ADD COLUMN locked_until DATETIME NULL;
+-- Login lockout
+ALTER TABLE users ADD COLUMN failed_attempts INT NOT NULL DEFAULT 0, ADD COLUMN locked_until DATETIME NULL;
