@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KiddoPath — Create Account</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link href="css/style.css" rel="stylesheet" />
+</head>
+<body class="d-flex align-items-center py-4">
+  <main class="container"><div class="row justify-content-center"><div class="col-lg-6">
+    <div class="glass-card p-4 p-md-5">
+      <div class="text-center mb-4">
+        <span class="badge-pastel badge-mint mb-2">Join KiddoPath</span>
+        <h2 class="h3 mb-1">Create Your Account</h2>
+      </div>
+      <div id="regAlert" class="alert-box d-none" role="alert"></div>
+      <form id="regForm" novalidate>
+        <div class="mb-3"><label for="regName" class="glass-label">Full Name</label><input type="text" id="regName" class="glass-input" maxlength="100" autocomplete="name" /></div>
+        <div class="mb-3"><label for="regEmail" class="glass-label">Email Address</label><input type="email" id="regEmail" class="glass-input" autocomplete="email" /></div>
+        <div class="mb-3"><label for="regRole" class="glass-label">I am a...</label>
+          <select id="regRole" class="glass-select"><option>Caregiver</option><option>Occupational Therapist</option><option>SPED Teacher</option></select></div>
+        <div class="mb-3"><label for="regPassword" class="glass-label">Password</label><input type="password" id="regPassword" class="glass-input" autocomplete="new-password" /><div class="small text-secondary mt-1">8-72 characters with an uppercase letter, a lowercase letter, a number and a symbol.</div></div>
+        <div class="mb-4"><label for="regConfirm" class="glass-label">Confirm Password</label><input type="password" id="regConfirm" class="glass-input" autocomplete="new-password" /></div>
+        <button type="submit" id="regSubmitBtn" class="btn-pastel btn-pastel-mint w-100 fs-6 mb-3">Create Account</button>
+      </form>
+      <div class="glass-panel-subtle p-3 text-center">
+        <span class="small text-secondary">Already have an account?</span>
+        <a href="index.html" class="fw-bold text-decoration-none ms-1" style="color: #3b82f6;">Sign In &rarr;</a>
+      </div>
+    </div>
+  </div></div></main>
+
+  <script src="js/api.js"></script>
+  <script src="js/api-endpoints.js"></script>
+  <script src="js/script.js"></script>
+  <script>
+    redirectIfAuthenticated();
+    const PW_OK = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,72}$/;
+    const PW_RULES = 'Password needs 8-72 characters with an uppercase letter, a lowercase letter, a number and a symbol.';
+    function showRegAlert(msg, isError = true) {
+      $('regAlert').className = `alert-box ${isError ? 'alert-error' : 'alert-success'}`;
+      $('regAlert').textContent = msg;
+    }
+    $('regForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const [name, email, password, confirm] = ['regName', 'regEmail', 'regPassword', 'regConfirm'].map(id => $(id).value.trim());
+      if (!name || !email || !password) return showRegAlert('Please fill in all fields.');
+      if (!PW_OK.test(password)) return showRegAlert(PW_RULES);
+      if (password !== confirm) return showRegAlert('Passwords do not match.');
+      $('regSubmitBtn').disabled = true;
+      try {
+        await AuthAPI.register(name, email, password, $('regRole').value);
+        showRegAlert('Account created! Redirecting to sign in...', false);
+        setTimeout(() => { window.location.href = 'index.html'; }, 900);
+      } catch (err) { showRegAlert(err.message); $('regSubmitBtn').disabled = false; }
+    });
+  </script>
+</body>
+</html>

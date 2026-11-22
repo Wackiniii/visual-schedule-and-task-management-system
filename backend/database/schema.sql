@@ -7,6 +7,8 @@ CREATE TABLE users (
     email VARCHAR(150) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('Caregiver', 'Occupational Therapist', 'SPED Teacher') NOT NULL,
+    failed_attempts INT NOT NULL DEFAULT 0,
+    locked_until DATETIME NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -41,3 +43,16 @@ CREATE TABLE tasks (
     completed_at DATETIME NULL,
     FOREIGN KEY (schedule_id) REFERENCES schedules(id) ON DELETE CASCADE
 );
+
+-- Reusable task sets (existing databases: run just this statement)
+CREATE TABLE IF NOT EXISTS task_sets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    tasks TEXT NOT NULL COMMENT 'JSON list of {name, icon, time, duration}',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Login lockout (existing databases: run just this statement)
+-- ALTER TABLE users ADD COLUMN failed_attempts INT NOT NULL DEFAULT 0, ADD COLUMN locked_until DATETIME NULL;
