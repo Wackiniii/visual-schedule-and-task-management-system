@@ -1,113 +1,102 @@
 <?php
+// Shared JSON helpers. Responses: {"status":"success","data":...} or {"status":"error","message":...}
+function api_success($data, int $code = 200): void { http_response_code($code); echo json_encode(["status" => "success", "data" => $data]); exit(); }
+function api_error(int $code, string $message): void { http_response_code($code); echo json_encode(["status" => "error", "message" => $message]); exit(); }
 
-function api_success($data, int $statusCode = 200): void
+function api_require_method(array $allowed): string
 {
-    http_response_code($statusCode);
-    echo json_encode(["status" => "success", "data" => $data]);
-    exit();
-}
-
-function api_error(int $statusCode, string $message): void
-{
-    http_response_code($statusCode);
-    echo json_encode(["status" => "error", "message" => $message]);
-    exit();
-}
-
-function api_require_method(array $allowedMethods): string
-{
-    $method = $_SERVER['REQUEST_METHOD'];
-    if (!in_array($method, $allowedMethods, true)) {
-        header('Allow: ' . implode(', ', $allowedMethods));
+    if (!in_array($_SERVER['REQUEST_METHOD'], $allowed, true)) {
+        header('Allow: ' . implode(', ', $allowed));
         api_error(405, 'Method not allowed.');
     }
-
-    return $method;
+    return $_SERVER['REQUEST_METHOD'];
 }
 
 function api_read_body(): array
 {
-    $body = file_get_contents('php://input');
-    if ($body === false || trim($body) === '') {
-        api_error(400, 'A JSON request body is required.');
-    }
-
-    $data = json_decode($body, true);
-    if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
-        api_error(400, 'Request body must be valid JSON.');
-    }
-
+    $data = json_decode(file_get_contents('php://input'), true);
+    if (!is_array($data)) api_error(400, 'Request body must be valid JSON.');
     return $data;
 }
 
-function api_id($value, string $name, int $minimum = 1): int
+function api_id($value, string $name, int $min = 1): int
 {
     $id = filter_var($value, FILTER_VALIDATE_INT);
-    if ($id === false || $id < $minimum) {
-        api_error(400, $name . ' must be a valid integer.');
-    }
-
+    if ($id === false || $id < $min) api_error(400, "$name must be a valid integer.");
     return $id;
 }
 
-function api_required_id(array $data, string $name, int $minimum = 1): int
+function api_body_id(array $d, string $name, int $min = 1): int
 {
-    if (!array_key_exists($name, $data)) {
-        api_error(400, $name . ' is required.');
-    }
-
-    return api_id($data[$name], $name, $minimum);
+    if (!array_key_exists($name, $d)) api_error(400, "$name is required.");
+    return api_id($d[$name], $name, $min);
 }
 
 function api_query_id(string $name, bool $required = true): ?int
 {
-    if (!isset($_GET[$name]) || $_GET[$name] === '') {
-        if ($required) {
-            api_error(400, $name . ' is required.');
-        }
-
+    $value = $_GET[$name] ?? '';
+    if ($value === '') {
+        if ($required) api_error(400, "$name is required.");
         return null;
     }
-
-    return api_id($_GET[$name], $name);
+    return api_id($value, $name);
 }
 
-function api_required_string(array $data, string $name, int $maxLength): string
+// String field up to $max chars; required ones are trimmed and must be non-empty, optional ones may be null/''.
+function api_string(array $d, string $name, int $max, bool $required = false): ?string
 {
-    if (!isset($data[$name]) || !is_string($data[$name])) {
-        api_error(400, $name . ' is required and must be a string.');
+    $value = $d[$name] ?? null;
+    if ($required && is_string($value)) $value = trim($value);
+    if ($value === null || $value === '') {
+        if ($required) api_error(400, "$name is required.");
+        return null;
     }
-
-    $value = trim($data[$name]);
-    if ($value === '' || strlen($value) > $maxLength) {
-        api_error(400, $name . ' must be between 1 and ' . $maxLength . ' characters.');
-    }
-
+    if (!is_string($value) || strlen($value) > $max) api_error(400, "$name must be a string up to $max characters.");
     return $value;
 }
 
-function api_optional_string(array $data, string $name, int $maxLength): ?string
+function api_time(array $d): ?string
 {
-    if (!array_key_exists($name, $data) || $data[$name] === null || $data[$name] === '') {
-        return null;
-    }
-
-    if (!is_string($data[$name]) || strlen($data[$name]) > $maxLength) {
-        api_error(400, $name . ' must be a string no longer than ' . $maxLength . ' characters.');
-    }
-
-    return $data[$name];
+    $time = api_string($d, 'time', 8);
+    if ($time === null) return null;
+    if (!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/', $time)) api_error(400, 'time must use HH:MM or HH:MM:SS format.');
+    return strlen($time) === 5 ? "$time:00" : $time;
 }
 
-function api_bind_params(mysqli_stmt $statement, string $types, array &$params): void
+function api_duration(array $d): ?int
 {
-    $arguments = [$types];
-    foreach ($params as &$param) {
-        $arguments[] = &$param;
-    }
-    unset($param);
+    return ($d['duration'] ?? '') === '' ? null : api_id($d['duration'], 'duration', 0);
+}
 
-    call_user_func_array([$statement, 'bind_param'], $arguments);
+// One rule, one message (the registration page checks the same thing). 72 = bcrypt's byte limit.
+function api_password_error(string $password): ?string
+{
+    $ok = strlen($password) >= 8 && strlen($password) <= 72 && preg_match('/[a-z]/', $password)
+        && preg_match('/[A-Z]/', $password) && preg_match('/\d/', $password) && preg_match('/[^a-zA-Z\d]/', $password);
+    return $ok ? null : 'Password needs 8-72 characters with an uppercase letter, a lowercase letter, a number and a symbol.';
+}
+
+function api_query(mysqli $conn, string $sql, string $types, array $params): mysqli_stmt
+{
+    $statement = $conn->prepare($sql);
+    $statement->bind_param($types, ...$params);
+    $statement->execute();
+    return $statement;
+}
+
+// Rows the user owns: $sql ends in "WHERE <owner column> = ?"; each non-null $filters entry adds " AND col = ?".
+function api_select(mysqli $conn, string $sql, int $userId, array $filters, string $order): mysqli_result
+{
+    $types = 'i';
+    $params = [$userId];
+    foreach ($filters as $column => $value) {
+        if ($value !== null) {
+            $sql .= " AND $column = ?";
+            $types .= 'i';
+            $params[] = $value;
+        }
+    }
+    return api_query($conn, "$sql ORDER BY $order", $types, $params)->get_result();
 }
 
 function api_handle_database_errors(callable $handler): void
@@ -119,4 +108,3 @@ function api_handle_database_errors(callable $handler): void
         api_error(500, 'A database error occurred.');
     }
 }
-

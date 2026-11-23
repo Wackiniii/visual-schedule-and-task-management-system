@@ -3,566 +3,127 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>KiddoPath — Child View &amp; Talking Board</title>
+  <title>KiddoPath — Child View</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link href="css/style.css" rel="stylesheet" />
-  <style>
-    .mode-switch-pill {
-      display: inline-flex;
-      background: rgba(255, 255, 255, 0.72);
-      border: 1.5px solid var(--glass-border);
-      border-radius: 18px;
-      padding: 0.35rem;
-      gap: 0.35rem;
-    }
-    .mode-tab-btn {
-      min-height: 44px;
-      padding: 0.55rem 1.25rem;
-      border-radius: 14px;
-      border: none;
-      background: transparent;
-      font-family: var(--font-display);
-      font-weight: 800;
-      font-size: 0.96rem;
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .mode-tab-btn.active {
-      background: linear-gradient(135deg, #6ba8f8 0%, #947ef2 100%);
-      color: #ffffff;
-      box-shadow: 0 6px 16px rgba(91, 155, 243, 0.28);
-    }
-    .cat-pill-btn {
-      min-height: 42px;
-      padding: 0.45rem 1.05rem;
-      border-radius: 999px;
-      border: 1.5px solid var(--glass-border);
-      background: rgba(255, 255, 255, 0.78);
-      font-weight: 700;
-      font-size: 0.88rem;
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all 0.18s ease;
-    }
-    .cat-pill-btn.active {
-      background: var(--pastel-lavender-soft);
-      border-color: var(--pastel-lavender);
-      color: #5b21b6;
-    }
-    .glass-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(30, 41, 59, 0.35);
-      backdrop-filter: blur(8px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 1.25rem;
-      z-index: 1500;
-    }
-    .glass-backdrop.open { display: flex; }
-    .glass-dialog {
-      width: 100%;
-      max-width: 460px;
-      background: rgba(255, 255, 255, 0.95);
-      border: 1.5px solid #ffffff;
-      border-radius: 26px;
-      padding: 1.75rem;
-      box-shadow: 0 24px 60px rgba(30, 41, 59, 0.2);
-    }
-  </style>
 </head>
 <body>
+  <div id="appNavbar"></div>
+  <main class="container page-main">
+    <div class="page-header">
+      <div><h1 class="h3 mb-1">Child View</h1><p class="text-secondary small mb-0">Big, calm, one-step-at-a-time routine.</p></div>
+      <select id="childSelect" class="glass-select" style="max-width:240px" aria-label="Choose child"></select>
+    </div>
 
-  <header id="appNavbar"></header>
-
-  <main class="container py-4">
-
-    <!-- Top Child & Mode Control Bar -->
-    <section class="glass-card p-3 p-md-4 mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
-      <div class="d-flex flex-wrap align-items-center gap-3">
-        <div>
-          <label for="childSelector" class="glass-label mb-1">Active Child</label>
-          <select id="childSelector" class="glass-select" style="min-width: 200px;"></select>
-        </div>
-        <div>
-          <label for="scheduleDateInput" class="glass-label mb-1">Schedule Date</label>
-          <input type="date" id="scheduleDateInput" class="glass-input" />
-        </div>
-      </div>
-
-      <div class="mode-switch-pill" role="tablist">
-        <button type="button" id="tabRoutineBtn" class="mode-tab-btn active">My Routine</button>
-        <button type="button" id="tabTalkingBtn" class="mode-tab-btn">My Talking Board</button>
-      </div>
-    </section>
-
-    <!-- VIEW 1: Visual Schedule & Pie Countdown Timer -->
-    <section id="routineSection">
-      <div class="row">
-        <!-- Current Task Spotlight + Visual Pie Timer -->
-        <div class="col-lg-5">
-          <div class="child-task-hero text-center h-100 d-flex flex-column justify-content-between">
-            <div>
-              <span class="badge-pastel badge-sky mb-2" id="currentTaskBadge">Now</span>
-              <div id="heroIconTile" class="pastel-icon-tile tile-lavender mb-3" style="width:76px;height:76px;border-radius:24px;font-size:2.3rem;margin:0 auto;">
-                &#11088;
-              </div>
-              <h1 class="h3 mb-1" id="heroTaskTitle" style="font-size: 1.65rem;">No Tasks Scheduled</h1>
-              <p class="text-secondary small mb-4" id="heroTaskMeta">Select a child or create a schedule in Schedule Builder.</p>
-            </div>
-
-            <!-- Visual Pie Countdown Ring -->
-            <div class="my-2">
-              <div id="pieTimerRing" class="pie-timer-ring" style="--timer-deg: 360deg;">
-                <div class="pie-timer-inner">
-                  <div class="h3 mb-0" id="timerDisplay" style="font-size: 1.5rem;">00:00</div>
-                  <div class="small text-muted fw-bold" id="timerStatusLabel">Ready</div>
-                </div>
-              </div>
-
-              <div class="d-flex justify-content-center gap-2 mt-3">
-                <button type="button" id="startPauseTimerBtn" class="btn-pastel btn-pastel-sky" style="min-height:44px;padding:0.5rem 1.1rem;">Start Timer</button>
-                <button type="button" id="resetTimerBtn" class="btn-pastel btn-pastel-glass" style="min-height:44px;padding:0.5rem 1rem;">Reset</button>
-                <button type="button" id="speakTaskBtn" class="btn-pastel btn-pastel-lavender" style="min-height:44px;padding:0.5rem 1rem;">Speak</button>
-              </div>
-            </div>
-
-            <div class="mt-4">
-              <button type="button" id="completeCurrentTaskBtn" class="btn-pastel btn-pastel-mint w-100" style="font-size: 1.1rem; min-height: 54px;" disabled>
-                I'm All Done!
-              </button>
-            </div>
+    <div class="row">
+      <div class="col-lg-7"><div class="child-task-hero text-center">
+        <div id="heroEmpty" class="empty-state"></div>
+        <div id="heroBody" class="d-none">
+          <span class="badge-pastel badge-sky mb-2">Now</span>
+          <div class="pastel-icon-tile tile-peach mb-2" style="margin:0 auto;width:104px;height:104px;font-size:2.8rem;background:#fff"><i id="heroIcon"></i></div>
+          <h2 class="display-6 mb-1" id="heroName"></h2>
+          <p class="text-secondary" id="heroTime"></p>
+          <div class="pie-timer-ring mb-3" id="timerRing"><div class="pie-timer-inner"><span class="fw-bold fs-6" id="timerText">--:--</span></div></div>
+          <div class="d-flex gap-2 justify-content-center flex-wrap">
+            <button type="button" id="speakBtn" class="btn-pastel btn-pastel-lavender btn-big"><i class="fa-solid fa-volume-high"></i> Say it</button>
+            <button type="button" id="timerBtn" class="btn-pastel btn-pastel-sky btn-big"></button>
+            <button type="button" id="doneBtn" class="btn-pastel btn-pastel-mint btn-big"><i class="fa-solid fa-check"></i> All done!</button>
           </div>
         </div>
+      </div></div>
+      <div class="col-lg-5"><div class="glass-card p-4 h-100">
+        <h2 class="h6 mb-3">Today's Routine</h2>
+        <div id="timeline" class="d-flex flex-column gap-2"></div>
+      </div></div>
+    </div>
 
-        <!-- Step-by-Step Visual Routine List -->
-        <div class="col-lg-7">
-          <div class="glass-card p-4 h-100">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-              <div>
-                <h2 class="h3 mb-0" style="font-size: 1.35rem;">Today's Visual Steps</h2>
-                <p class="small text-secondary mb-0">Tap any step to focus on it or mark it complete</p>
-              </div>
-              <span class="badge-pastel badge-mint" id="routineProgressBadge">0 / 0 Done</span>
-            </div>
-
-            <div id="childTaskList" class="d-flex flex-column gap-3">
-              <div class="glass-panel-subtle p-4 text-center text-secondary">Loading visual schedule...</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- VIEW 2: My Talking Board (AAC Picture Cards) -->
-    <section id="talkingBoardSection" class="d-none">
-      <div class="glass-card p-4">
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-          <div>
-            <span class="badge-pastel badge-lavender mb-1">AAC Communication Board</span>
-            <h2 class="h3 mb-0" style="font-size: 1.45rem;">My Talking Board</h2>
-            <p class="small text-secondary mb-0">Tap any card to speak aloud clearly</p>
-          </div>
-          <button type="button" id="openAddAacBtn" class="btn-pastel btn-pastel-lavender">
-            <span>+ Add Custom Card</span>
-          </button>
-        </div>
-
-        <!-- Category Filter Pills -->
-        <div id="aacCategoryBar" class="d-flex flex-wrap gap-2 mb-4">
-          <button type="button" class="cat-pill-btn active" data-cat="All">All Cards</button>
-          <button type="button" class="cat-pill-btn" data-cat="Needs">Needs</button>
-          <button type="button" class="cat-pill-btn" data-cat="Feelings">Feelings</button>
-          <button type="button" class="cat-pill-btn" data-cat="Activities">Activities</button>
-          <button type="button" class="cat-pill-btn" data-cat="People">People</button>
-        </div>
-
-        <!-- AAC Grid -->
-        <div id="aacCardsGrid" class="row"></div>
-      </div>
-    </section>
-
+    <div class="glass-card p-4 mt-4">
+      <h2 class="h6 mb-3">My Talking Board</h2>
+      <div id="aacBoard" class="row"></div>
+    </div>
   </main>
 
-  <!-- Add Custom AAC Card Modal -->
-  <div id="aacModalBackdrop" class="glass-backdrop" role="dialog" aria-modal="true">
-    <div class="glass-dialog">
-      <div class="d-flex align-items-center justify-content-between mb-3">
-        <h3 class="h3 mb-0" style="font-size: 1.3rem;">Add Talking Board Card</h3>
-        <button type="button" id="closeAacModalBtn" class="btn-pastel btn-pastel-glass" style="min-height:40px;padding:0.35rem 0.85rem;">&times;</button>
-      </div>
-
-      <form id="aacCardForm">
-        <div class="mb-3">
-          <label for="aacLabelInput" class="glass-label">Word or Short Phrase *</label>
-          <input type="text" id="aacLabelInput" class="glass-input" placeholder="e.g., I need a break" required />
-        </div>
-
-        <div class="row" style="margin:-0.4rem;">
-          <div class="col-sm-6" style="padding:0.4rem;">
-            <label for="aacEmojiInput" class="glass-label">Picture Emoji *</label>
-            <input type="text" id="aacEmojiInput" class="glass-input" placeholder="e.g., &#128164;" value="&#128172;" required />
-          </div>
-          <div class="col-sm-6" style="padding:0.4rem;">
-            <label for="aacCategoryInput" class="glass-label">Category</label>
-            <select id="aacCategoryInput" class="glass-select">
-              <option value="Needs">Needs</option>
-              <option value="Feelings">Feelings</option>
-              <option value="Activities">Activities</option>
-              <option value="People">People</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="d-flex justify-content-end gap-2 mt-4">
-          <button type="button" id="cancelAacModalBtn" class="btn-pastel btn-pastel-glass">Cancel</button>
-          <button type="submit" class="btn-pastel btn-pastel-lavender">Add Card</button>
-        </div>
-      </form>
-    </div>
-  </div>
   <script src="js/api.js"></script>
+  <script src="js/api-endpoints.js"></script>
   <script src="js/script.js"></script>
   <script>
-    const currentUser = requireAuth();
-    renderGlassNavbar('child');
+    const user = initPage('child');
+    let tasks = [], current = null, timerId = null, remaining = 0, total = 0;
+    const START = '<i class="fa-solid fa-play"></i> Start timer';
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const preselectedChildId = urlParams.get('child_id');
-
-    const childSelector = document.getElementById('childSelector');
-    const scheduleDateInput = document.getElementById('scheduleDateInput');
-    scheduleDateInput.value = getTodayISO();
-
-    const ICON_EMOJI_MAP = {
-      'fa-sun': '☀️',
-      'fa-tooth': '🪥',
-      'fa-utensils': '🍽️',
-      'fa-shirt': '👕',
-      'fa-book-open': '📖',
-      'fa-puzzle-piece': '🧩',
-      'fa-bath': '🛁',
-      'fa-bed': '🛏️',
-      'fa-music': '🎵',
-      'fa-person-walking': '🚶',
-      'fa-apple-whole': '🍎',
-      'fa-hands-bubbles': '🧼',
-      'fa-tasks': '⭐',
-    };
-
-    function getTaskEmoji(iconKey) {
-      return ICON_EMOJI_MAP[iconKey] || iconKey || '⭐';
-    }
-
-    let currentTasks = [];
-    let selectedTaskIndex = 0;
-    let timerInterval = null;
-    let totalSeconds = 0;
-    let remainingSeconds = 0;
-    let isTimerRunning = false;
-
-    const tabRoutineBtn = document.getElementById('tabRoutineBtn');
-    const tabTalkingBtn = document.getElementById('tabTalkingBtn');
-    const routineSection = document.getElementById('routineSection');
-    const talkingBoardSection = document.getElementById('talkingBoardSection');
-
-    tabRoutineBtn.addEventListener('click', () => {
-      tabRoutineBtn.classList.add('active');
-      tabTalkingBtn.classList.remove('active');
-      routineSection.classList.remove('d-none');
-      talkingBoardSection.classList.add('d-none');
+    const AAC = [['I want water', 'glass-water', 'sky'], ['I am hungry', 'utensils', 'peach'], ['I need help', 'hand', 'rose'], ['Bathroom please', 'toilet', 'mint'],
+      ['Yes', 'thumbs-up', 'mint'], ['No', 'thumbs-down', 'rose'], ['I am tired', 'bed', 'lavender'], ['I want to play', 'puzzle-piece', 'peach']];
+    $('aacBoard').innerHTML = AAC.map(([text, icon, tile]) => `<div class="col-6 col-sm-4 col-md-3"><div class="aac-card" data-say="${text}" tabindex="0" role="button">
+      <div class="pastel-icon-tile tile-${tile}"><i class="fa-solid fa-${icon}"></i></div><span class="fw-bold">${text}</span></div></div>`).join('');
+    $('aacBoard').addEventListener('click', (e) => {
+      const card = e.target.closest('.aac-card'); if (!card) return;
+      card.classList.add('speaking'); speakText(card.dataset.say);
+      setTimeout(() => card.classList.remove('speaking'), 700);
     });
 
-    tabTalkingBtn.addEventListener('click', () => {
-      tabTalkingBtn.classList.add('active');
-      tabRoutineBtn.classList.remove('active');
-      talkingBoardSection.classList.remove('d-none');
-      routineSection.classList.add('d-none');
-    });
-
-    function stopTimer() {
-      if (timerInterval) clearInterval(timerInterval);
-      timerInterval = null;
-      isTimerRunning = false;
-      document.getElementById('startPauseTimerBtn').textContent = 'Start Timer';
+    function drawTimer() {
+      const pad = (n) => String(n).padStart(2, '0');
+      $('timerText').textContent = total ? `${pad(Math.floor(remaining / 60))}:${pad(remaining % 60)}` : '--:--';
+      $('timerRing').style.setProperty('--timer-deg', (total ? remaining / total * 360 : 360) + 'deg');
     }
+    function stopTimer() { clearInterval(timerId); timerId = null; $('timerBtn').innerHTML = START; }
 
-    function updatePieDisplay() {
-      const mins = Math.floor(remainingSeconds / 60);
-      const secs = remainingSeconds % 60;
-      document.getElementById('timerDisplay').textContent =
-        `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-
-      const deg = totalSeconds > 0 ? Math.round((remainingSeconds / totalSeconds) * 360) : 360;
-      document.getElementById('pieTimerRing').style.setProperty('--timer-deg', `${deg}deg`);
-    }
-
-    function selectTask(index) {
+    function render() {
       stopTimer();
-      selectedTaskIndex = index;
-      const task = currentTasks[index];
-
-      if (!task) {
-        document.getElementById('currentTaskBadge').textContent = 'Empty';
-        document.getElementById('heroIconTile').textContent = '⭐';
-        document.getElementById('heroTaskTitle').textContent = 'No Tasks Scheduled';
-        document.getElementById('heroTaskMeta').textContent = 'Add tasks in Schedule Builder to see them here.';
-        document.getElementById('completeCurrentTaskBtn').disabled = true;
-        totalSeconds = 0;
-        remainingSeconds = 0;
-        document.getElementById('timerStatusLabel').textContent = 'Ready';
-        updatePieDisplay();
-        return;
+      current = tasks.find(t => t.status !== 'completed') || null;
+      $('heroEmpty').classList.toggle('d-none', !!current);
+      $('heroEmpty').textContent = tasks.length ? 'All tasks done. Great job!' : 'No schedule for today.';
+      $('heroBody').classList.toggle('d-none', !current);
+      if (current) {
+        $('heroIcon').className = `fa-solid ${current.icon || 'fa-tasks'}`;
+        $('heroName').textContent = current.name;
+        $('heroTime').textContent = current.time ? formatTime12h(current.time) : '';
+        total = remaining = (current.duration || 0) * 60;
+        drawTimer();
       }
-
-      const isDone = task.status === 'completed';
-      document.getElementById('currentTaskBadge').textContent = isDone ? 'Completed' : `Step ${index + 1} of ${currentTasks.length}`;
-      document.getElementById('heroIconTile').textContent = getTaskEmoji(task.icon);
-      document.getElementById('heroTaskTitle').textContent = task.name;
-      document.getElementById('heroTaskMeta').textContent = `${formatTime12h(task.time)} • ${task.duration || 10} minutes`;
-
-      const completeBtn = document.getElementById('completeCurrentTaskBtn');
-      completeBtn.disabled = isDone;
-      completeBtn.textContent = isDone ? 'Completed!' : "I'm All Done!";
-
-      totalSeconds = (parseInt(task.duration, 10) || 10) * 60;
-      remainingSeconds = isDone ? 0 : totalSeconds;
-      document.getElementById('timerStatusLabel').textContent = isDone ? 'Done' : 'Ready';
-      updatePieDisplay();
-      renderTaskList();
+      $('timeline').innerHTML = tasks.map(t => `<div class="timeline-task-card ${t.status === 'completed' ? 'is-completed' : ''} ${t === current ? 'selected-task' : ''}">
+        <div class="d-flex align-items-center gap-3"><i class="fa-solid ${escapeHtml(t.icon || 'fa-tasks')}"></i>
+          <div class="flex-grow-1"><div class="fw-bold">${escapeHtml(t.name)}</div>
+            <div class="small text-secondary">${t.time ? formatTime12h(t.time) : ''}${t.duration ? ' • ' + escapeHtml(t.duration) + ' min' : ''}</div></div>
+          ${t.status === 'completed' ? '<span class="done-mark"><i class="fa-solid fa-check"></i></span>' : ''}</div></div>`).join('') || '<div class="empty-state">Nothing scheduled.</div>';
     }
 
-    document.getElementById('startPauseTimerBtn').addEventListener('click', () => {
-      if (!currentTasks[selectedTaskIndex] || remainingSeconds <= 0) return;
-      if (isTimerRunning) {
-        stopTimer();
-        document.getElementById('timerStatusLabel').textContent = 'Paused';
-        return;
-      }
+    async function loadToday() {
+      tasks = [];
+      try {
+        const childId = $('childSelect').value;
+        const schedule = childId && (await SchedulesAPI.list(user.id, childId)).find(s => s.date === getTodayISO());
+        if (schedule) tasks = (await TasksAPI.list(user.id, schedule.id)).sort((a, b) => (a.time || '99').localeCompare(b.time || '99'));
+      } catch (e) { showToast(e.message, 'rose'); }
+      render();
+    }
 
-      isTimerRunning = true;
-      document.getElementById('startPauseTimerBtn').textContent = 'Pause';
-      document.getElementById('timerStatusLabel').textContent = 'Active';
-      speakText(`Starting ${currentTasks[selectedTaskIndex].name}`);
-
-      timerInterval = setInterval(() => {
-        remainingSeconds -= 1;
-        updatePieDisplay();
-        if (remainingSeconds <= 0) {
-          stopTimer();
-          document.getElementById('timerStatusLabel').textContent = 'Time Up!';
-          playSuccessChime();
-          speakText(`Time is up for ${currentTasks[selectedTaskIndex].name}. Great job!`);
-        }
+    $('speakBtn').onclick = () => speakText(current.name);
+    $('timerBtn').onclick = () => {
+      if (timerId) return stopTimer();
+      if (!remaining) return showToast('This task has no duration set.', 'peach');
+      $('timerBtn').innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
+      timerId = setInterval(() => {
+        remaining--; drawTimer();
+        if (remaining <= 0) { stopTimer(); playSuccessChime(); speakText('Time is up!'); }
       }, 1000);
-    });
+    };
+    $('doneBtn').onclick = async () => {
+      try { // PUT replaces the whole task, so resend it
+        await TasksAPI.update(current.id, { ...current, user_id: user.id, status: 'completed' });
+        playSuccessChime(); showToast('Great job!', 'mint'); loadToday();
+      } catch (e) { showToast(e.message, 'rose'); }
+    };
+    $('childSelect').onchange = loadToday;
 
-    document.getElementById('resetTimerBtn').addEventListener('click', () => {
-      const task = currentTasks[selectedTaskIndex];
-      if (!task) return;
-      stopTimer();
-      totalSeconds = (parseInt(task.duration, 10) || 10) * 60;
-      remainingSeconds = totalSeconds;
-      document.getElementById('timerStatusLabel').textContent = 'Ready';
-      updatePieDisplay();
-    });
-
-    document.getElementById('speakTaskBtn').addEventListener('click', () => {
-      const task = currentTasks[selectedTaskIndex];
-      if (task) speakText(task.name);
-    });
-        document.getElementById('completeCurrentTaskBtn').addEventListener('click', async () => {
-      const task = currentTasks[selectedTaskIndex];
-      if (!task || task.status === 'completed') return;
-
-      const btn = document.getElementById('completeCurrentTaskBtn');
-      btn.disabled = true;
-      btn.textContent = 'Saving...';
-
+    (async () => {
       try {
-        await TasksAPI.update(task.id, { user_id: currentUser.id, status: 'completed' });
-        task.status = 'completed';
-        playSuccessChime();
-        speakText(`Great job completing ${task.name}!`);
-        showToast(`Completed: ${task.name}`, 'mint');
-
-        const nextPendingIdx = currentTasks.findIndex((t) => t.status !== 'completed');
-        selectTask(nextPendingIdx !== -1 ? nextPendingIdx : selectedTaskIndex);
-      } catch (err) {
-        showToast(err.message || 'Could not update task.', 'rose');
-        btn.disabled = false;
-        btn.textContent = "I'm All Done!";
-      }
-    });
-    function renderTaskList() {
-      const container = document.getElementById('childTaskList');
-      const doneCount = currentTasks.filter((t) => t.status === 'completed').length;
-      document.getElementById('routineProgressBadge').textContent = `${doneCount} / ${currentTasks.length} Done`;
-
-      if (currentTasks.length === 0) {
-        container.innerHTML = `
-          <div class="glass-panel-subtle p-4 text-center">
-            <p class="text-secondary mb-3">No visual tasks scheduled for this date yet.</p>
-            <a href="schedule-creator.html?child_id=${childSelector.value}" class="btn-pastel btn-pastel-sky" style="min-height:42px;padding:0.45rem 1rem;">Open Schedule Builder</a>
-          </div>
-        `;
-        return;
-      }
-
-      container.innerHTML = currentTasks
-        .map((task, idx) => {
-          const isDone = task.status === 'completed';
-          const isSelected = idx === selectedTaskIndex;
-          return `
-            <div class="timeline-task-card ${isDone ? 'is-completed' : ''} ${isSelected ? 'selected-task' : ''} d-flex align-items-center justify-content-between gap-3" style="cursor:pointer;" onclick="selectTask(${idx})">
-              <div class="d-flex align-items-center gap-3">
-                <div class="pastel-icon-tile ${isDone ? 'tile-mint' : 'tile-peach'}" style="font-size:1.55rem;">
-                  ${getTaskEmoji(task.icon)}
-                </div>
-                <div>
-                  <div class="fw-bold ${isDone ? 'text-decoration-line-through text-muted' : ''}">${escapeHtml(task.name)}</div>
-                  <div class="small text-secondary">${formatTime12h(task.time)} &bull; ${task.duration || 10} min</div>
-                </div>
-              </div>
-              <span class="badge-pastel ${isDone ? 'badge-mint' : 'badge-peach'}">
-                ${isDone ? 'Done' : 'Pending'}
-              </span>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    async function loadChildSchedule() {
-      const childId = childSelector.value;
-      const date = scheduleDateInput.value;
-      if (!childId) return;
-
-      try {
-        const schedules = await SchedulesAPI.getByChild(currentUser.id, childId, date);
-        if (schedules.length > 0) {
-          currentTasks = await TasksAPI.getBySchedule(currentUser.id, schedules[0].id);
-        } else {
-          currentTasks = [];
-        }
-        const firstPending = currentTasks.findIndex((t) => t.status !== 'completed');
-        selectTask(firstPending !== -1 ? firstPending : 0);
-      } catch (err) {
-        showToast(err.message || 'Error loading schedule.', 'rose');
-      }
-    }
-
-    const AAC_STORAGE_KEY = 'kiddopath_aac_cards';
-    const DEFAULT_AAC_CARDS = [
-      { label: 'Water', emoji: '💧', category: 'Needs' },
-      { label: 'Eat / Hungry', emoji: '🍎', category: 'Needs' },
-      { label: 'Bathroom', emoji: '🚽', category: 'Needs' },
-      { label: 'Help Please', emoji: '🙋', category: 'Needs' },
-      { label: 'Break / Rest', emoji: '🛋️', category: 'Needs' },
-      { label: 'Happy', emoji: '😊', category: 'Feelings' },
-      { label: 'Tired', emoji: '😴', category: 'Feelings' },
-      { label: 'Sad / Upset', emoji: '😢', category: 'Feelings' },
-      { label: 'Overwhelmed', emoji: '🎧', category: 'Feelings' },
-      { label: 'Play', emoji: '🧩', category: 'Activities' },
-      { label: 'Read Book', emoji: '📖', category: 'Activities' },
-      { label: 'Music', emoji: '🎵', category: 'Activities' },
-      { label: 'All Done', emoji: '✅', category: 'Activities' },
-      { label: 'Mom', emoji: '👩', category: 'People' },
-      { label: 'Dad', emoji: '👨', category: 'People' },
-      { label: 'Teacher', emoji: '🧑‍🏫', category: 'People' },
-    ];
-
-    let activeAacCategory = 'All';
-
-    function getAacCards() {
-      try {
-        const saved = JSON.parse(localStorage.getItem(AAC_STORAGE_KEY) || 'null');
-        return Array.isArray(saved) && saved.length > 0 ? saved : DEFAULT_AAC_CARDS;
-      } catch {
-        return DEFAULT_AAC_CARDS;
-      }
-    }
-
-    function renderAacCards() {
-      const grid = document.getElementById('aacCardsGrid');
-      const cards = getAacCards().filter(
-        (c) => activeAacCategory === 'All' || c.category === activeAacCategory
-      );
-
-      grid.innerHTML = cards
-        .map(
-          (card) => `
-          <div class="col-6 col-sm-4 col-md-3">
-            <div class="aac-card" onclick="handleAacSpeak(this, '${escapeHtml(card.label)}')">
-              <div style="font-size: 2.6rem; line-height: 1;">${escapeHtml(card.emoji)}</div>
-              <div class="fw-bold display-font" style="font-size: 1.05rem;">${escapeHtml(card.label)}</div>
-              <span class="badge-pastel badge-lavender" style="font-size: 0.7rem; padding: 0.2rem 0.6rem;">${escapeHtml(card.category)}</span>
-            </div>
-          </div>
-        `
-        )
-        .join('');
-    }
-
-    function handleAacSpeak(el, text) {
-      el.classList.add('speaking');
-      speakText(text);
-      setTimeout(() => el.classList.remove('speaking'), 450);
-    }
-
-    document.querySelectorAll('.cat-pill-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.cat-pill-btn').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        activeAacCategory = btn.getAttribute('data-cat');
-        renderAacCards();
-      });
-    });
-
-    const aacModalBackdrop = document.getElementById('aacModalBackdrop');
-    document.getElementById('openAddAacBtn').addEventListener('click', () => aacModalBackdrop.classList.add('open'));
-    document.getElementById('closeAacModalBtn').addEventListener('click', () => aacModalBackdrop.classList.remove('open'));
-    document.getElementById('cancelAacModalBtn').addEventListener('click', () => aacModalBackdrop.classList.remove('open'));
-
-    document.getElementById('aacCardForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const label = document.getElementById('aacLabelInput').value.trim();
-      const emoji = document.getElementById('aacEmojiInput').value.trim() || '💬';
-      const category = document.getElementById('aacCategoryInput').value;
-      if (!label) return;
-
-      const updated = [...getAacCards(), { label, emoji, category }];
-      localStorage.setItem(AAC_STORAGE_KEY, JSON.stringify(updated));
-      document.getElementById('aacCardForm').reset();
-      document.getElementById('aacEmojiInput').value = '💬';
-      aacModalBackdrop.classList.remove('open');
-      renderAacCards();
-      showToast(`Added "${label}" to Talking Board!`, 'mint');
-    });
-
-    async function initChildView() {
-      if (!currentUser) return;
-      renderAacCards();
-      const children = await ChildrenAPI.getAll(currentUser.id);
-      if (children.length === 0) {
-        childSelector.innerHTML = '<option value="">No children found</option>';
-        return;
-      }
-      childSelector.innerHTML = children
-        .map((c) => `<option value="${c.id}">${escapeHtml(c.name)} (Age ${c.age})</option>`)
-        .join('');
-
-      if (preselectedChildId && children.some((c) => String(c.id) === preselectedChildId)) {
-        childSelector.value = preselectedChildId;
-      }
-      loadChildSchedule();
-    }
-
-    childSelector.addEventListener('change', loadChildSchedule);
-    scheduleDateInput.addEventListener('change', loadChildSchedule);
-
-    initChildView();
+        fillSelect($('childSelect'), await ChildrenAPI.list(user.id));
+        const wanted = new URLSearchParams(location.search).get('child_id');
+        if (wanted) $('childSelect').value = wanted;
+      } catch (e) { showToast(e.message, 'rose'); }
+      loadToday();
+    })();
   </script>
 </body>
 </html>

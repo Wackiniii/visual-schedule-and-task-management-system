@@ -130,6 +130,8 @@
   </main>
 
   <script src="js/api.js"></script>
+  <!-- ADDED: defines AuthAPI (login/register/saveUser/getCurrentUser); without it the login page throws "AuthAPI is not defined" -->
+  <script src="js/api-endpoints.js"></script>
   <script src="js/script.js"></script>
   <script>
     redirectIfAuthenticated();

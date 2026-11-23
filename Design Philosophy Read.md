@@ -1,1 +1,0 @@
-*insert design properties here
