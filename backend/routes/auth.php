@@ -3,7 +3,7 @@ require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../config/api.php';
 
 const MAX_FAILED_LOGINS = 5;
-const LOCK_MINUTES = 15;
+const LOCK_MINUTES = 5;
 
 $data = json_decode(file_get_contents("php://input"), true) ?? [];
 $email = trim($data['email'] ?? '');
