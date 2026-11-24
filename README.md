@@ -80,3 +80,7 @@ https://github.com/user-attachments/assets/014c4e82-f4b9-4fd2-b891-87f060669e0a
 
 ### 4. Closing the application
 - close both terminal by pressing `Ctrl + C`
+
+
+### 5. One Click Launch
+- Once you finished the previous steps you can just click `start.bat` to launch the website and click `stop.bat` to close all running server in your PC.
