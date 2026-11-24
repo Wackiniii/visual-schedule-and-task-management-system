@@ -53,7 +53,7 @@ https://github.com/user-attachments/assets/cf0dc450-b4fc-4cb0-812b-fc45e13a3895
 https://github.com/user-attachments/assets/83659c17-5625-4239-82b0-56106d01148d
 
 
-### 2. Setting up PHP built-in server for backend and frontend
+### 2. Setting up PHP built-in server for backend and frontend | Windows 11
 1. Open terminal via View > Terminal (or press `` Ctrl + ` ``)
 2. Terminal 1  (cmd) (Backend API)
 ```bash
@@ -80,3 +80,7 @@ https://github.com/user-attachments/assets/014c4e82-f4b9-4fd2-b891-87f060669e0a
 
 ### 4. Closing the application
 - close both terminal by pressing `Ctrl + C`
+
+
+### 5. One Click Launch
+- Once you finished the previous steps you can just click `start.bat` to launch the website and click `stop.bat` to close all running server in your PC.
