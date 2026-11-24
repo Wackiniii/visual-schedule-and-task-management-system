@@ -53,7 +53,7 @@ https://github.com/user-attachments/assets/cf0dc450-b4fc-4cb0-812b-fc45e13a3895
 https://github.com/user-attachments/assets/83659c17-5625-4239-82b0-56106d01148d
 
 
-### 2. Setting up PHP built-in server for backend and frontend
+### 2. Setting up PHP built-in server for backend and frontend | Windows 11
 1. Open terminal via View > Terminal (or press `` Ctrl + ` ``)
 2. Terminal 1  (cmd) (Backend API)
 ```bash
