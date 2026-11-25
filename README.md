@@ -17,6 +17,9 @@ Members:
 - Sangueza
 - Toleran
 
+## Demo Video
+`https://drive.google.com/file/d/1nAs6LP5IeYxQ1BADt9tBx8jtSjzpcYk5/view?usp=drive_link`
+
 ## Setup Guide
 
 ### Prerequisite
