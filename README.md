@@ -18,7 +18,7 @@ Members:
 - Toleran
 
 ## Demo Video
-`[https://drive.google.com/file/d/1CnvP9FdLE0U_445XscbjtwYkwlzjOKmM/view?usp=sharing](url)`
+`[demo-video](https://drive.google.com/file/d/1CnvP9FdLE0U_445XscbjtwYkwlzjOKmM/view?usp=sharing)`
 
 ## Setup Guide
 
