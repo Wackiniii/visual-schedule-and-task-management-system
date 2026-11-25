@@ -81,12 +81,14 @@ Content-Type: application/json
 
 4.1 Authentication (auth.php)  
 4.1.1 Register User: POST /routes/auth.php?action=register  
+```bash
 {  
   "name": "Joe Padilla",  
   "email": "joepadilla@test.com",  
   "password": "v3RYH4RDP4SSW0RD\_123",  
   "role": "Caregiver"  
 }
+```
 
 - Success Response (201 Created): {"status": "success", "message": "User registered successfully.", "user\_id": 1}  
   4.1.2 Login User: POST /routes/auth.php?action=login
@@ -97,6 +99,7 @@ Content-Type: application/json
 4.2 Child Profiles (children.php)  
 4.2.1 Get All Children: GET /routes/children.php?user\_id=1  
 4.2.2 Create Child Profile: POST /routes/children.php  
+```bash
 {  
   "user\_id": 1,  
   "name": "Leo",  
@@ -105,6 +108,7 @@ Content-Type: application/json
   "notes": "Prefers gentle chimes over loud alarms",  
   "photo\_url": "assets/avatars/boy1.png"  
 }
+```
 
 - Update Child Profile: PUT /routes/children.php?id=1  
 - Delete Child Profile: DELETE /routes/children.php?id=1\&user\_id=1
@@ -112,17 +116,20 @@ Content-Type: application/json
 4.3 Visual Schedules (schedules.php)  
 4.3.1 Get Child Schedules: GET /routes/schedules.php?user\_id=1\&child\_id=1  
 4.3.2 Create Schedule: POST /routes/schedules.php  
+```bash
 {  
 "user\_id": 1,   
 "child\_id": 1,   
 "date": "2026-11-24"  
-}  
+}
+```
 4.3.4 Update Schedule: PUT /routes/schedules.php?id=1  
 4.3.5 Delete Schedule: DELETE /routes/schedules.php?id=1\&user\_id=1
 
 4.4 Routine Tasks (tasks.php)  
 4.4.1 Get Tasks by Schedule: GET /routes/tasks.php?user\_id=1\&schedule\_id=1  
 4.4.2 Create Task to Schedule: POST /routes/tasks.php  
+```bash
 {  
   "user\_id": 1,  
   "schedule\_id": 1,  
@@ -131,8 +138,10 @@ Content-Type: application/json
   "time": "08:00:00",  
   "duration": 5,  
   "status": "pending"  
-}  
+}
+```
 4.4.3 Update Task / Mark Completed: PUT /routes/tasks.php?id=1  
+```bash
 {  
   "user\_id": 1,  
   "schedule\_id": 1,  
@@ -141,7 +150,8 @@ Content-Type: application/json
   "time": "08:00:00",  
   "duration": 5,  
   "status": "completed"  
-}  
+}
+```
 4.4.4 Delete Task: DELETE /routes/tasks.php?id=1\&user\_id=1  
 4.5 System Health Check (health.php)  
 4.5.1 Check Database: GET /routes/health.php
@@ -151,6 +161,7 @@ Content-Type: application/json
 4.6 Task Sets (task\_sets.php)  
 4.6.1 Get All Task Sets: GET /routes/task\_sets.php?user\_id=1  
 4.6.2 Create Task Sets: POST /routes/task\_sets.php  
+```bash
 {  
   "user\_id": 1,  
   "name": "Morning Hygiene Routine",  
@@ -163,7 +174,7 @@ Content-Type: application/json
     }  
   \]  
 }
-
+```
 - Success Response (201 Created): Returns id, name, and the validated tasks array  
   4.6.3 Delete Task Set: DELETE /routes/task\_sets.php?id=1\&user\_id=1  
 - Success Response (200 OK): {"id": 1}
@@ -172,7 +183,7 @@ Content-Type: application/json
 4.7.1 Verifying user if exist: GET /routes/users.php?id=1\&email=joepadilla@test.com
 
 - Success Response (200 OK):
-
+```bash
   {
 
     "name": "Joe Padilla",
@@ -184,7 +195,7 @@ Content-Type: application/json
     "role": "Caregiver"
 
   }
-
+```
 **5\. Local Installation and Deployment Instructions**  
 5.1 Install Prerequisites: Install XAMPP with Apache and MySQL enabled  
 5.2. Setting up the Database (One-Time Setup)
@@ -195,15 +206,14 @@ Content-Type: application/json
 
 5.3 Verify database configuration: Ensure that your database credentials from backend/config/db.php are matched to your local MySQL setup **(host: localhost, user: root, password: "").**  
 5.4.1 Running the server: Ensure that the MySQL is enabled in XAMPP control panel then copy and paste the following in the terminal
-
-+  cd backend
-
-   C:\\xampp\\php\\php.exe \-S localhost:5000
-
-+  cd frontend
-
-   C:\\xampp\\php\\php.exe \-S localhost:3000
-
+```bash
+cd backend
+C:\\xampp\\php\\php.exe \-S localhost:5000
+```
+```bash
+cd frontend
+C:\\xampp\\php\\php.exe \-S localhost:3000
+```
 - Leave this open when deploying the website
 
 5.4.2 Running the server: You can also just run start.bat to start and launch the website and stop.bat to close and terminate the server.  
