@@ -1,10 +1,4 @@
 <?php
-/*
- * ADDED FILE: backend/routes/users.php
- * GET ?id=<user-id>&email=<email>  ->  confirms the logged-in user still exists in
- * the database (e.g. after the schema was re-imported) and returns fresh name/role.
- * Both id AND email must match, so ids cannot be enumerated to read other users.
- */
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../config/api.php';
 
