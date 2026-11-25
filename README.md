@@ -17,6 +17,9 @@ Members:
 - Sangueza
 - Toleran
 
+## Demo Video
+`https://drive.google.com/file/d/1nAs6LP5IeYxQ1BADt9tBx8jtSjzpcYk5/view?usp=drive_link`
+
 ## Setup Guide
 
 ### Prerequisite
@@ -84,3 +87,12 @@ https://github.com/user-attachments/assets/014c4e82-f4b9-4fd2-b891-87f060669e0a
 
 ### 5. One Click Launch
 - Once you finished the previous steps you can just click `start.bat` to launch the website and click `stop.bat` to close all running server in your PC.
+
+
+https://github.com/user-attachments/assets/578194d9-ba5e-49ac-9f05-344316165819
+
+
+
+
+https://github.com/user-attachments/assets/6e103245-ddf5-4def-9851-2ea62254dfb7
+
