@@ -1,10 +1,5 @@
 <?php
-/*
- * ADDED FILE: backend/routes/health.php
- * Connection check used by frontend/db-check.html. Reports whether MySQL is
- * reachable, whether visual_schedule_db exists, and how many rows each table has.
- * Reuses config/db.php so credentials stay in one place.
- */
+
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT); // make connection failures throw instead of printing HTML
 
 try {
